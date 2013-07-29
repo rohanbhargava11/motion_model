@@ -58,17 +58,40 @@ class robot:
     def move(self, turn, forward):
         if forward < 0:
             raise ValueError, 'Robot cant move backwards'         
-        
+        mean_dist_d=0.0
+        mean_dist_t=0.0
+        var_dist_d=self.forward_noise
+        var_dist_t=self.turn_noise
+        mean_turn_d=0.0
+        mean_turn_t=0.0
+        var_turn_t=self.turn_noise
+        var_turn_d=self.forward_noise
+        dist=random.gauss(forward*mean_dist_d+turn*mean_dist_t,forward**2*var_dist_d+turn**2*var_dist_t)
         # turn, and add randomness to the turning command
-        orientation = self.orientation + float(turn) + random.gauss(0.0, self.turn_noise)
+        turn_dist=random.gauss(forward*mean_turn_d+turn*mean_turn_t,forward**2*var_turn_d+turn**2*var_turn_t)
+        orientation = self.orientation + float(turn_dist) 
         orientation %= 2 * pi
-        
+        '''
         # move, and add randomness to the motion command
-        dist = float(forward) + random.gauss(0.0, self.forward_noise)
+        
         x = self.x + (cos(orientation) * dist)
         y = self.y + (sin(orientation) * dist)
         x %= world_size    # cyclic truncate
         y %= world_size
+        '''
+        # now make a new motion model according to Elzar paper
+        #dist=float(forward)+random.gauss(0,0,self.forward_noise)
+        # according to Elzar paper dist comes from a distribtuion
+        
+        orientation_new=self.orientation+float(turn_dist)/2
+        orientation_new %= 2*pi
+        x=self.x+(cos(orientation_new)*dist)
+
+        y = self.y + (sin(orientation_new) * dist)
+        
+        x %= world_size    # cyclic truncate
+        y %= world_size        
+        
         
         # set particle
         res = robot()
@@ -132,13 +155,7 @@ def get_position(p):
                         + p[0].orientation - pi)
     return [x / len(p), y / len(p), orientation / len(p)]
 
-#myrobot = robot()
-#myrobot.set_noise(5.0, 0.1, 5.0)
-#myrobot.set(30.0, 50.0, pi/2)
-#myrobot = myrobot.move(-pi/2, 15.0)
-#print myrobot.sense()
-#myrobot = myrobot.move(-pi/2, 10.0)
-#print myrobot.sense()
+
 
 ####   DON'T MODIFY ANYTHING ABOVE HERE! ENTER CODE BELOW ####
 
@@ -151,14 +168,7 @@ world=zeros((world_size,world_size))
 
 for i in range(4):
     world[landmarks[i][0],landmarks[i][1]]=1
-    #hold(1)    
-    #plot(landmarks[i][0],landmarks[i][1],'bo')
-    
-    #plot(test)
-    
-    
-#show()
-#print landmarks[1][1]
+
 print myrobot.x,myrobot.y
 
 #show()
@@ -168,9 +178,7 @@ print world
 ion()
 for i in range(N):
         x = robot()
-        #world[x.x,x.y]=3
-        #raw_input("Press enter to see the robot move")
-        #print world
+    
         x.set_noise(0.05,0.05,5.0)
         p.append(x)
 w_mean=[]
@@ -180,78 +188,20 @@ for t in range(10):
     for i in range(4):
         hold(1)
         plot(landmarks[i][0],landmarks[i][1],'bo')
-    '''
-    if t==1:
-        for i in range(N):
-            
-            world[p[i].x,p[i].y]=3
-    '''    
+
     world[myrobot.x,myrobot.y]=0
-    myrobot = myrobot.move(0.1,5.0) #turn,forward
+    myrobot = myrobot.move(0.0,5.0) #turn,forward
     plot(myrobot.x,myrobot.y,'r^')
     world[myrobot.x,myrobot.y]=2
-    #Z_before=myrobot.sense()
-    #print world
+
     
-    '''
-    myrobot_before_x=myrobot.x
-    myrobot_before_y=myrobot.y
-    '''
-    '''
-    if t==3:
-        print 'I am kidnapped'
-        myrobot.kidnapp()
-        plot(myrobot.x,myrobot.y,'rs')
-    '''
-    '''
-        p=[]
-        for i in range(N):
-            
-                x = robot()
-                #world[x.x,x.y]=3
-                #raw_input("Press enter to see the robot move")
-                #print world
-                x.set_noise(0.05,0.05,5.0)
-                p.append(x)  
-    '''
-    #print myrobot,myrobot_before
-    '''
-    if myrobot_before_x==myrobot.x or myrobot_before_y==myrobot.y:
-        print 'not kidnapp'
-    else:
-        print 'kidnapped'
-    '''
-    Z = myrobot.sense()
-    '''
-    if Z==Z_before:
-        print 'not possible'
-    else:
-        print 'strange'
-    '''
-    #print p #PLEASE LEAVE THIS HERE FOR GRADING PURPOSES
-    
+   
+    Z=myrobot.sense()
     p2 =[]
     for i in range(N):
         p2.append(p[i].move(0.1,5.0))
             
-        #raw_input("Press enter to see the robot move")	
-        #world[p2[i].x,p2[i].y]=3
-        #print world
-    #print p2[1]
-    #print p2[1].x
-    '''
-    x.set_noise(0.0,0.0,0.0)
-    p4=[]
-    
-    for i in range(N):
-        p4.append(p[i].move(0.1,5.0))
-    diff=[]
-    for i in range(N):
-        diff.append(p2[i].x-p4[i].x) # this should give me the difference, I am not using abs as there should be some values less than or more 
-    x.set_noise(0.05,0.05,5.0)
-    # now if we set the noise and then move the particles then we can get the distribution of the noise
-    '''
-    p=p2
+      
     
     
     w=[]
@@ -261,13 +211,7 @@ for t in range(10):
         prob_sensor,dist_sensor=p[i].measurement_prob(Z)
         w.append(prob_sensor)
         #dist_w.append(dist_sensor)
-    '''    
-    w_mean.append(mean(w)) # we can check this with the current w and that will give us a idea if the robot is localized or not
-    
-    figure(2)
-    clf()
-    plot(w_mean)
-    '''
+ 
     figure(1)
     #figure(1)
     #print w
@@ -286,46 +230,20 @@ for t in range(10):
             index = (index +1) % N
             
         p3.append(p[index])
-        #print index
-    #p=p3
-    # you don't need this now because we are telling it that it is kidnapped
+   
     
-    '''
-    for i in range(N-(int(0.9*N))):
-        random_par = robot()
-        random_par.set_noise(0.05,0.05,0.000011)
-        p3.append(random_par)
-    '''   
+ 
     p=p3
     
     #print p
     print len(p)
-    #if t==9:
-    '''   
-    for i in range(N):
-        plot(p[i].x,p[i].y,'yo')
-        world[p[i].x,p[i].y]=3
-    '''    
+  
     print 'The actual location of the robot',myrobot
     particle_location=get_position(p)
     print 'The predicted location',particle_location    
     plot(particle_location[0],particle_location[1],'r*')
     raw_input("Press enter to see the robot move")
-    #print world
-    #print p
-    #print "the actual location is"
-    
-    
-    #show()
-    #clf()
-#print p
-'''
-print("the actual location is")
-#print diff
-mean=sum(diff)/N
-var=sum(abs((diff-mean)))/N
-print mean,var
-'''
+
 print myrobot
 #print p
 
