@@ -240,11 +240,12 @@ for t in range(10):
         plot(landmarks[i][0],landmarks[i][1],'bo')
 
     world[myrobot.x,myrobot.y]=0
-    #if t<=5:
-    #    myrobot = myrobot.move_real(0.0,5.0,myrobot.forward_noise,myrobot.turn_noise) #turn,forward
-    #else:
-    #    myrobot=myrobot.move_real(0.0,5.0,myrobot.forward_noise+1,myrobot.turn_noise+1)
-    myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
+    if t<=5:
+        myrobot = myrobot.move_real(0.0,5.0,0.05,0.05) #turn,forward
+    else:
+        print ' I am on a different terrain'
+        myrobot=myrobot.move_real(0.0,5.0,0.15,0.15)
+    #myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
     plot(myrobot.x,myrobot.y,'r^')
     world[myrobot.x,myrobot.y]=2
 
