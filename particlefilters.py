@@ -54,6 +54,54 @@ class robot:
             Z.append(dist)
         return Z
     
+    def move_real(self, turn, forward,forward_noise,turn_noise):
+            if forward < 0:
+                raise ValueError, 'Robot cant move backwards'         
+            mean_dist_d=0.0
+            mean_dist_t=0.0
+            var_dist_d=forward_noise
+            #print 'forward noise',forward_noise
+            #print 'turn noise',turn_noise
+            var_dist_t=turn_noise
+            mean_turn_d=0.0
+            mean_turn_t=0.0
+            var_turn_t=turn_noise
+            var_turn_d=forward_noise
+            
+            dist=random.gauss(forward*mean_dist_d+turn*mean_dist_t,forward**2*var_dist_d+turn**2*var_dist_t)
+            #print 'distance is',dist
+            # turn, and add randomness to the turning command
+            turn_dist=random.gauss(forward*mean_turn_d+turn*mean_turn_t,forward**2*var_turn_d+turn**2*var_turn_t)
+            #print 'turn is',turn_dist
+            orientation = self.orientation + float(turn_dist) 
+            orientation %= 2 * pi
+            '''
+            # move, and add randomness to the motion command
+            
+            x = self.x + (cos(orientation) * dist)
+            y = self.y + (sin(orientation) * dist)
+            x %= world_size    # cyclic truncate
+            y %= world_size
+            '''
+            # now make a new motion model according to Elzar paper
+            #dist=float(forward)+random.gauss(0,0,self.forward_noise)
+            # according to Elzar paper dist comes from a distribtuion
+            
+            orientation_new=self.orientation+float(turn_dist)/2
+            orientation_new %= 2*pi
+            x=self.x+(cos(orientation_new)*dist)
+    
+            y = self.y + (sin(orientation_new) * dist)
+            
+            x %= world_size    # cyclic truncate
+            y %= world_size        
+            
+            
+            # set particle
+            res = robot()
+            res.set(x, y, orientation)
+            res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise)
+            return res    
     
     def move(self, turn, forward):
         if forward < 0:
@@ -67,10 +115,12 @@ class robot:
         var_turn_t=self.turn_noise
         var_turn_d=self.forward_noise
         dist=random.gauss(forward*mean_dist_d+turn*mean_dist_t,forward**2*var_dist_d+turn**2*var_dist_t)
+        
         # turn, and add randomness to the turning command
         turn_dist=random.gauss(forward*mean_turn_d+turn*mean_turn_t,forward**2*var_turn_d+turn**2*var_turn_t)
-        orientation = self.orientation + float(turn_dist) 
-        orientation %= 2 * pi
+        
+        orientation_real = self.orientation + float(turn_dist) 
+        orientation_real %= 2 * pi
         '''
         # move, and add randomness to the motion command
         
@@ -95,7 +145,7 @@ class robot:
         
         # set particle
         res = robot()
-        res.set(x, y, orientation)
+        res.set(x, y, orientation_real)
         res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise)
         return res
     
@@ -190,7 +240,11 @@ for t in range(10):
         plot(landmarks[i][0],landmarks[i][1],'bo')
 
     world[myrobot.x,myrobot.y]=0
-    myrobot = myrobot.move(0.0,5.0) #turn,forward
+    #if t<=5:
+    #    myrobot = myrobot.move_real(0.0,5.0,myrobot.forward_noise,myrobot.turn_noise) #turn,forward
+    #else:
+    #    myrobot=myrobot.move_real(0.0,5.0,myrobot.forward_noise+1,myrobot.turn_noise+1)
+    myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
     plot(myrobot.x,myrobot.y,'r^')
     world[myrobot.x,myrobot.y]=2
 
@@ -199,7 +253,7 @@ for t in range(10):
     Z=myrobot.sense()
     p2 =[]
     for i in range(N):
-        p2.append(p[i].move(0.1,5.0))
+        p2.append(p[i].move(0.0,5.0)) # turn,forward
             
       
     
