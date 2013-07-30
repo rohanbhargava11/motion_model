@@ -219,12 +219,12 @@ world=zeros((world_size,world_size))
 for i in range(4):
     world[landmarks[i][0],landmarks[i][1]]=1
 
-print myrobot.x,myrobot.y
+#print myrobot.x,myrobot.y
 
 #show()
 world[myrobot.x,myrobot.y]=2
 #print  world[landmarks[i][0],landmarks[i][1]]
-print world
+#print world
 ion()
 for i in range(N):
         x = robot()
@@ -261,13 +261,18 @@ for t in range(10):
     
     w=[]
     
-    
+    p_previous=p
+    p=p2
+    # I think there is a missing p=p2 .. need to verify this
     for i in range(N):
-        prob_sensor,dist_sensor=p[i].measurement_prob(Z)
+        prob_sensor,dist_sensor=p2[i].measurement_prob(Z)
+        #print prob_sensor
         w.append(prob_sensor)
+        
         #dist_w.append(dist_sensor)
- 
+    #print 'the difference is',diff_odom
     figure(1)
+    
     #figure(1)
     #print w
     
@@ -278,6 +283,8 @@ for t in range(10):
     index = int(random.random() * N)
     beta = 0.0
     mw = max(w)
+    diff_odom_x=[]
+    
     for i in range(int(N)):
         beta += random.random() * 2.0 * mw
         while beta > w[index]:
@@ -285,6 +292,13 @@ for t in range(10):
             index = (index +1) % N
             
         p3.append(p[index])
+        diff_odom_x.append(np.sqrt(((p[index].x-p_previous[index].x)**2)+((p[index].y-p_previous[index].y)**2)))
+    
+    
+    diff_odom=np.asarray(diff_odom_x)
+    print 'the mean is',np.mean(diff_odom)
+    print 'the variance is',np.var(diff_odom)
+    #print 'the difference in the x is',diff_odom_x
    
     
  
