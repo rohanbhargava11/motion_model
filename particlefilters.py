@@ -253,7 +253,7 @@ for t in range(20):
         myrobot = myrobot.move_real(0.0,5.0,0.05,0.05) #turn,forward
     else:
         print ' I am on a different terrain'
-        myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
+        myrobot=myrobot.move_real(0.0,5.0,0.55,0.55)
     #myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
     
     plot(myrobot.x,myrobot.y,'r^')
@@ -266,7 +266,7 @@ for t in range(20):
     p2_original=[]
     for i in range(N):
         p2.append(p[i].move(0.0,5.0)) # turn,forward
-        p2_original.append(p_original[i].move(0.0,5.0))
+        p2_original.append(p_original[i].move_real(0.0,5.0,0.05,0.05))
             
       
     
@@ -339,7 +339,7 @@ for t in range(20):
     
  
     p=p3
-    
+    p_original=p3_original
     #print p
     print len(p)
     
@@ -349,7 +349,7 @@ for t in range(20):
     diff_position.append(np.sqrt(((myrobot.x-particle_location[0])**2)+((myrobot.y-particle_location[1])**2)))
     diff_position_original.append(np.sqrt(((myrobot.x-particle_location_original[0])**2)+((myrobot.y-particle_location_original[1])**2)))
     print 'The predicted location',particle_location    
-    
+    print 'the original location is',particle_location_original
     #plot(particle_location[0],particle_location[1],'r*')
     #raw_input("Press enter to see the robot move")
 
