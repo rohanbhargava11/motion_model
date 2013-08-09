@@ -253,7 +253,7 @@ for t in range(20):
         myrobot = myrobot.move_real(0.0,5.0,0.05,0.05) #turn,forward
     else:
         print ' I am on a different terrain'
-        myrobot=myrobot.move_real(0.0,5.0,0.55,0.55)
+        myrobot=myrobot.move_real(0.0,5.0,0.2,0.2)
     #myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
     
     plot(myrobot.x,myrobot.y,'r^')
@@ -319,7 +319,8 @@ for t in range(20):
             
         p3.append(p[index])
         p3_original.append(p_original[index_original])
-        diff_odom_x.append(np.sqrt(((p[index].x-p_previous[index].x)**2)+((p[index].y-p_previous[index].y)**2)))
+    for i in range(int(N)):
+        diff_odom_x.append(w[i]*(np.sqrt(((p[i].x-p_previous[i].x)**2)+((p[i].y-p_previous[i].y)**2))))
         #diff_odom_x_original.append(np.sqrt(((p_original[index].x-p_previous_original[index].x)**2)+((p_original[index].y-p_previous_original[index].y)**2)))
         
     
