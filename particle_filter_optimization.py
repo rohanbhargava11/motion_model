@@ -2,11 +2,16 @@ import numpy as np
 
 from scipy import optimize
 
-
+args = (distance[i],rotation[i],error[i],2*np.pi)
 def f(x,*args):
+    
     u, v, z = x
-    a, b, c,d = args
-    return -0.5*np.log(a*u + b*v + z)+(c**2/a*u+b*v+z) 
+    
+    for i in range(len(time):
+      a, b, c,d = args
+      return -0.5*np.log(a*u + b*v + z)+(c**2/a*u+b*v+z) 
+  
+  
 def gradf(x,*args):
     u, v, z = x
     a, b, c, d = args
@@ -22,12 +27,9 @@ error=(1,1)
 distance=(2,5)
 #answer_temp=0
 for i in range(len(rotation)):
-    args = (distance[i],rotation[i],error[i],2*np.pi)
-    res1=optimize.fmin_cg(f,x0,fprime=gradf,args=args,maxiter=1000)
+
+res1=optimize.fmin_cg(f,x0,fprime=gradf,args=args,maxiter=1000)
     
-    print type(res1)
+print type(res1)
     
-    x0=res1
-    
-    
-    print res1
+print res1
