@@ -58,30 +58,41 @@ class robot(object):
     
     
     def move(self, turn, forward):
-        if forward < 0:
-            raise ValueError, 'Robot cant move backwards'         
-        
-        # turn, and add randomness to the turning command
-        orientation = self.orientation + float(turn) + random.gauss(0.0, self.turn_noise)
-        orientation %= 2 * pi
-        
-        # move, and add randomness to the motion command
-        r=random.gauss(0.0,1)
-        prob= exp(-((r*r)/2))
-        #self.forward_prob=exp(-((r*r)/2))
-                              
-        dist = float(forward) + self.forward_noise*r
-        x = self.x + (cos(orientation) * dist)
-        y = self.y + (sin(orientation) * dist)
-        x %= world_size    # cyclic truncate
-        y %= world_size
-        
-        # set particle
-        res = robot()
-        res.set(x, y, orientation)
-        res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise)
-        res.forward_prob=prob
-        return res
+            if forward < 0:
+                raise ValueError, 'Robot cant move backwards'         
+            
+            mean_dist_t=0.0
+            var_dist_d=self.forward_noise
+            var_dist_t=self.turn_noise
+            mean_turn_d=0.0
+            mean_turn_t=0.0
+            var_turn_t=self.turn_noise
+            var_turn_d=self.forward_noise
+            var_trans_independent=self.forward_noise
+            var_rot_independent=self.turn_noise
+            dist=random.gauss(forward,forward**2*var_dist_d+turn**2*var_dist_t+var_trans_independent)
+            
+            # turn, and add randomness to the turning command
+            turn_dist=random.gauss(turn,forward**2*var_turn_d+turn**2*var_turn_t+var_rot_independent)
+            
+            orientation_real = self.orientation + float(turn_dist) 
+            orientation_real %= 2 * pi
+         
+            orientation_new=self.orientation+float(turn_dist)/2
+            orientation_new %= 2*pi
+            x=self.x+(cos(orientation_new)*dist)
+    
+            y = self.y + (sin(orientation_new) * dist)
+            
+            x %= world_size    # cyclic truncate
+            y %= world_size        
+            
+            
+            # set particle
+            res = robot()
+            res.set(x, y, orientation_real)
+            res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise)
+            return res   
     
     def Gaussian(self, mu, sigma, x):
         
@@ -195,33 +206,35 @@ def error_calculation(traj,trans_readings,rotation_readings):
 
 def f(x,*args):
     u, v,z = x
-    temp=0
-    for i in range(len(param_translation)):
+    #temp=0
+    #for i in range(counter):
         #args = (param[i],3, 7, 8, 9, 10)
-        a, b, c = args
-        temp+=np.log(2*np.pi)+np.log(a[i]*u + b[i]*v + z)+((c[i]**2)/a[i]*u+b[i]*v+z)
-    temp=temp*(-1*0.5)    
-    return temp
+    a, b, c = args
+    return sum(np.log(2*np.pi)+np.log(a[0:counter]*u + b[0:counter]*v + z)+((c[0:counter]**2)/a[0:counter]*u+b[0:counter]*v+z))*(-0.5)
+    #temp=temp*(-1*0.5)    
+    #return temp
 
 def gradf(x,*args):
     u, v,z = x
-    tmp_gu=0
-    tmp_gv=0 
-    tmp_gz=0
-    for i in range(len(param_translation)):
+    #print 'the constants are',u,v,z
+    #tmp_gu=0
+    #tmp_gv=0 
+    #tmp_gz=0
+    #for i in range(counter):
         #args = (param[i],3, 7, 8, 9, 10)
-        a, b, c = args
-        gu = (a[i]/a[i]*u+b[i]*v+z)-((c[i]**2)*a[i]/((a[i]*u+b[i]*v+z)**2))     # u-component of the gradient
-        gv = (b[i]/a[i]*u+b[i]*v+z)-((c[i]**2)*b[i]/((a[i]*u+b[i]*v+z)**2))   # v-component of the gradient
-        gz = (1/a[i]*u+b[i]*v+z)-((c[i]**2)/((a[i]*u+b[i]*v+z)**2))        
-        tmp_gu+=gu
-        tmp_gv+=gv
-        tmp_gz+=gz
-    tmp_gu=tmp_gu*(-1*0.5)
-    tmp_gv=tmp_gv*(-1*0.5)
-    tmp_gz=tmp_gz*(-1*0.5)
+    a, b, c = args
+    #print 'the args are',a[i],b[i],c[i]
+    gu = sum((a[0:counter]/a[0:counter]*u+b[0:counter]*v+z)-((c[0:counter]**2)*a[0:counter]/((a[0:counter]*u+b[0:counter]*v+z)**2)))*(-0.5)    # u-component of the gradient
+    gv = sum((b[0:counter]/a[0:counter]*u+b[0:counter]*v+z)-((c[0:counter]**2)*b[0:counter]/((a[0:counter]*u+b[0:counter]*v+z)**2)))*(-0.5)   # v-component of the gradient
+    gz = sum((1/a[0:counter]*u+b[0:counter]*v+z)-((c[0:counter]**2)/((a[0:counter]*u+b[0:counter]*v+z)**2)))*(-0.5)    
+    #tmp_gu+=gu
+    #tmp_gv+=gv
+    #tmp_gz+=gz
+    #tmp_gu=tmp_gu*(-1*0.5)
+    #tmp_gv=tmp_gv*(-1*0.5)
+    #tmp_gz=tmp_gz*(-1*0.5)
     #print type(tmp_gv)
-    return np.asarray((tmp_gu,tmp_gv,tmp_gz))
+    return np.asarray((gu,gv,gz))
 
 
 
@@ -233,7 +246,7 @@ test=arange(1,10)
 world=zeros((world_size,world_size))
 distance_reported=np.zeros((10))
 
-rotation_reported=np.zzeros((10))
+rotation_reported=np.zeros((10))
 
 for i in range(4):
     world[landmarks[i][0],landmarks[i][1]]=1
@@ -260,9 +273,11 @@ for i in range(N):
         x.set_noise(0.05,0.05,5.0)
         p.append(x)
 w_mean=[]
+counter=0
 for t in range(10):
     
     clf()
+    counter=t
     for i in range(4):
         hold(1)
         plot(landmarks[i][0],landmarks[i][1],'bo')
@@ -326,25 +341,20 @@ for t in range(10):
     
     trajectory=smooth(p_history,t,w,p)
     
-    distance_reported[i]=5
-    rotation_reported[i]=5
+    distance_reported[t]=5
+    rotation_reported[t]=0.1
     print' testing',trajectory
     if len(trajectory)>1:
         
         rotation_error,tran_error=error_calculation(trajectory,distance_reported,rotation_reported)
         print 'trajectory is',trajectory
     
-    args = (distance_reported,rotation,tran_error)
-    x0=np.asarray((0.5,0.5,0.5))
+        args = (distance_reported,rotation_reported,tran_error)
+        x0=np.asarray((0.1,0.1,0.1))
     
-    res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
-    #res1=optimize.minimize(f,x0,args=args,method='CG')
-    print 'res1=',res1    
-    '''   
-    for i in range(N):
-        plot(p[i].x,p[i].y,'yo')
-        world[p[i].x,p[i].y]=3
-    '''    
+        res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
+        print 'res1=',res1    
+    
     print 'The actual location of the robot',myrobot
     particle_location=get_position(p)
     print 'The predicted location',particle_location    
