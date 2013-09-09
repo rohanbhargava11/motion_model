@@ -193,7 +193,7 @@ def get_position(p):
 
 def smooth(p_history,time,weight_filtered,p_filtered):
     #print 'the history is',p_history[1][0].weight,p_history[1][0].forward_prob
-    print 'the length of p_history is',len(p_history[0]) 
+    #print 'the length of p_history is',len(p_history[0]) 
     traj=[]
     index = int(random.random() * N)
     beta = 0.0
@@ -235,7 +235,7 @@ def smooth(p_history,time,weight_filtered,p_filtered):
 def error_calculation(traj,trans_readings,rotation_readings):
     error_trans=np.zeros((len(traj),len(traj[0])))
     error_rotation=np.zeros((len(traj),len(traj[0])))
-    print ' the lenght is',len(traj[0])
+    #print ' the lenght is',len(traj[0])
     for i in range(len(traj)):
         for j in range(len(traj[i])-1):
             error_rotation[i][j]=np.mod((traj[i][j+1][2]-traj[i][j][2]-rotation_readings[j]),2*np.pi)#traj[i][j+1][2]-traj[i][j][2]# 
@@ -287,11 +287,12 @@ myrobot = robot()
 N = 500
 p = []
 p_original=[]
+p_decay_original=[]
 test=arange(1,10)
 world=zeros((world_size,world_size))
-distance_reported=np.zeros((20))
+distance_reported=np.zeros((100))
 
-rotation_reported=np.zeros((20))
+rotation_reported=np.zeros((100))
 
 for i in range(4):
     world[landmarks[i][0],landmarks[i][1]]=1
@@ -303,15 +304,17 @@ for i in range(4):
     
 #show()
 #print landmarks[1][1]
-print myrobot.x,myrobot.y
-p_history=np.ndarray((500,20),dtype=np.object)
+#print myrobot.x,myrobot.y
+p_history=np.ndarray((500,100),dtype=np.object)
+p_decay_history=np.ndarray((500,100),dtype=np.object)
 #show()
 world[myrobot.x,myrobot.y]=2
 #print  world[landmarks[i][0],landmarks[i][1]]
-print world
+#print world
 #ion()
 diff_position=[]
 diff_position_original=[]
+diff_position_original_decay=[]
 sensor_noise=2.0
 for i in range(N):
         x = robot()
@@ -321,15 +324,25 @@ for i in range(N):
         x.set_noise(0.05,0.05,sensor_noise,0.05)
         p.append(x)
         p_original.append(x)
+        p_decay_original.append(x)
 w_mean=[]
 counter=0
 forw=0.05
 turn=0.05
 inde=0.05
+forw_decay=forw
+turn_decay=turn
+inde_decay=inde
 forw_turn=0.05
+forw_turn_decay=forw_turn
 turn_turn=0.05
+turn_turn_decay=0.05
+
 inde_turn=0.05
-for t in range(20):
+inde_turn_decay=0.05
+move=5.0
+rotate=0.0  #is this in radian or degrees???
+for t in range(100):
     
     clf()
     counter=t
@@ -338,10 +351,10 @@ for t in range(20):
         #plot(landmarks[i][0],landmarks[i][1],'bo')
     world[myrobot.x,myrobot.y]=0
     if t<5:
-        myrobot = myrobot.move_real(0.0,5.0,0.05,0.05,0.05,0.05,0.05,0.05) #turn,forward
+        myrobot = myrobot.move_real(rotate,move,0.05,0.05,0.05,0.05,0.05,0.05) #turn,forward
     else:
-        print 'I am on a different terrain'
-        myrobot=myrobot.move_real(0.0,5.0,0.5,0.5,0.5,0.05,0.05,0.05) # still have to deal with the move_real theing
+        #print 'I am on a different terrain'
+        myrobot=myrobot.move_real(rotate,move,0.5,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
     #plot(myrobot.x,myrobot.y,'r^')
     world[myrobot.x,myrobot.y]=2
     #Z_before=myrobot.sense()
@@ -352,26 +365,36 @@ for t in range(20):
     Z=myrobot.sense()
     p2 =[]
     p2_original=[]
+    p2_decay_original=[]
+    
     for i in range(N):
-        p2.append(p[i].move_real(0.0,5.0,forw,turn,inde,forw_turn,turn_turn,inde_turn))
-        p2_original.append(p_original[i].move_real(0.0,5.0,0.05,0.05,0.05,0.05,0.05,0.05))
-       
+        p2.append(p[i].move_real(rotate,move,forw,turn,inde,forw_turn,turn_turn,inde_turn))
+        p2_original.append(p_original[i].move_real(rotate,move,0.05,0.05,0.05,0.05,0.05,0.05))
+        p2_decay_original.append(p_decay_original[i].move_real(rotate,move,forw_decay,turn_decay,inde_decay,forw_turn_decay,turn_turn_decay,inde_turn_decay))
+        #print p2_decay_original[i]
     
     
     
     w=[]
     w_original=[]
-    p_previous=p
+    w_decay_original=[]
+    #p_previous=p
+    #p_decay_previous=p
     p=p2
     p_original=p2_original
-        
+    p_decay_original=p2_decay_original
+    #print 'hello',p_decay_original
     for i in range(N):
         prob_sensor,dist_sensor=p[i].measurement_prob(Z)
         prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z)
-        
+        #print i
+        #print p_decay_original[i]
+        prob_sensor_original_decay,dist_sensor_original_decay=p_decay_original[i].measurement_prob(Z)
         w.append(prob_sensor)
         w_original.append(prob_sensor_original)
+        w_decay_original.append(prob_sensor_original_decay)
         p[i].weight=prob_sensor
+        p_decay_original[i].weight=prob_sensor_original_decay
         #dist_w.append(dist_sensor)
    
     figure(1)
@@ -383,51 +406,81 @@ for t in range(20):
     
     p3=[]
     p3_original=[]
+    p3_decay_original=[]
     index = int(random.random() * N)
     index_original=int(random.random()*N)
+    index_decay_original=int(random.random()*N)
     beta = 0.0
     beta_original=0.0
+    beta_decay_original=0.0
     mw = max(w)
     mw_original=max(w_original)
+    mw_decay_original=max(w_decay_original)
     for i in range(int(N)):
         beta += random.random() * 2.0 * mw
         beta_original +=random.random() * 2.0 * mw_original
+        beta_decay_original +=random.random() * 2.0 * mw_decay_original
         while beta > w[index]:
             beta -= w[index]
             index = (index +1) % N
         while beta_original > w_original[index_original]:
             beta_original -= w_original[index_original]
             index_original=(index_original+1)%N
+        while beta_decay_original > w_decay_original[index_decay_original]:
+                    beta_decay_original -= w_decay_original[index_decay_original]
+                    index_decay_original=(index_decay_original+1)%N        
         p3.append(p[index])
         p3_original.append(p_original[index_original])
+        p3_decay_original.append(p_decay_original[index_decay_original])
         #print index
     #p=p3
     # you don't need this now because we are telling it that it is kidnapped
 
     p=p3
     p_original=p3_original
+    p_decay_original=p3_decay_original
     for i in range(len(p)):
         
         p_history[i][t]=p[i]
+        p_decay_history[i][t]=p_decay_original[i]
 
     #print p
    
-    print 'the history is',p_history[1][0].weight,p_history[1][0].forward_prob
+    #print 'the history is',p_history[1][0].weight,p_history[1][0].forward_prob
     
     trajectory=smooth(p_history,t,w,p)
+    trajectory_decay=smooth(p_decay_history,t,w_decay_original,p_decay_original)
     #print 'trajectory is',trajectory[0][0][0]
     
     distance_reported[t]=5
-    rotation_reported[t]=0.1
+    rotation_reported[t]=0.0
+    tran_error_decay=np.zeros((len(trajectory_decay),len(trajectory_decay[0])))
     #print' testing',trajectory
     if len(trajectory[0])>1:
         
         rotation_error,tran_error=error_calculation(trajectory,distance_reported,rotation_reported)
-        #print 'trajectory is',trajectory
-        #print 'tran erro',tran_error
-        #print 'specific',tran_error[:,0]
+        rotation_error_decay,tran_error_decay=error_calculation(trajectory_decay,distance_reported,rotation_reported)
+        #tran_error_decay=tran_error
+        #decay fucntion for the tran error#
+        lamda=0.03
+        #for i in range(len(tran_error)):
+        #print 'tran error before',tran_error
+        
+        #print 'time is',t
+        for i in range(len(tran_error_decay)):
+                
+            for j in range(len(tran_error_decay[0])-1):
+                
+                
+                    #print t-(j+1)
+                    tran_error_decay[i][j]=math.copysign((abs((tran_error_decay[i][j]))*np.exp(-1*lamda*(t-(j)))),tran_error_decay[i][j])
+            
+        #tran_error[0][0]=1
         args = (distance_reported,rotation_reported,tran_error)
-        print 'the rotation error is',rotation_error
+        args_decay=(distance_reported,rotation_reported,tran_error_decay)
+        #print 'tran error is',tran_error_decay
+        #print 'tran error decay is',tran_error_decay
+        #print 'the rotation error is',rotation_error
         #print 'just checking',tran_error[0:counter] #when we did this the tran error were huge -> so check that code
         args1 = (distance_reported,rotation_reported,rotation_error)
         x0=np.asarray((0.05,0.05,0.05))
@@ -436,22 +489,32 @@ for t in range(20):
         #res1 = optimize.fmin_cg(f, x0,fprime=gradf, args=args,maxiter=50000,full_output=1)
         res1 = optimize.fmin_ncg(f, x0,fprime=gradf,args=args,maxiter=1000,full_output=1)
         res2=optimize.fmin_ncg(f,x1,fprime=gradf,args=args1,maxiter=1000,full_output=1)
-        print 'res1=',res1
-        print 'res2=',res2
+        res3=optimize.fmin_ncg(f, x0,fprime=gradf,args=args_decay,maxiter=1000,full_output=1)
+        #print 'res1=',res1
+        #print 'res3=',res3
         #print res1[0][0]
         forw=res1[0][0]
         turn=res1[0][1]
         inde=res1[0][2]
+        forw_decay=res3[0][0]
+        turn_decay=res3[0][1]
+        inde_decay=res3[0][2]
         forw_turn=res2[0][0]
+        forw_turn_decay=res2[0][0]
         turn_turn=res2[0][1]
+        turn_turn_decay=res2[0][1]
         inde_turn=res2[0][2]
+        inde_turn_decay=res2[0][2]
     
-    print 'The actual location of the robot',myrobot
+    #print 'The actual location of the robot',myrobot
     particle_location=get_position(p)
+    
     particle_location_original=get_position(p_original)
-    print 'The predicted location',particle_location
+    particle_location_original_decay=get_position(p_decay_original)
+    #print 'The predicted location',particle_location
     diff_position.append(np.sqrt((min((myrobot.x-particle_location[0]),100-(myrobot.x-particle_location[0]))**2)+(min((myrobot.y-particle_location[1]),100-(myrobot.y-particle_location[1])))**2))
     diff_position_original.append(np.sqrt((min((myrobot.x-particle_location_original[0]),100-(myrobot.x-particle_location_original[0]))**2)+(min((myrobot.y-particle_location_original[1]),100-(myrobot.y-particle_location_original[1])))**2))
+    diff_position_original_decay.append(np.sqrt((min((myrobot.x-particle_location_original_decay[0]),100-(myrobot.x-particle_location_original_decay[0]))**2)+(min((myrobot.y-particle_location_original_decay[1]),100-(myrobot.y-particle_location_original_decay[1])))**2))
     #diff_position_original.append(np.sqrt(((myrobot.x-particle_location_original[0])**2)+((myrobot.y-particle_location_original[1])**2)))    
     #plot(particle_location[0],particle_location[1],'r*')
     #raw_input("Press enter to see the robot move")
@@ -466,7 +529,7 @@ for t in range(20):
 figure(1)
 plot(diff_position)
 plot(diff_position_original,'r')
-
+plot(diff_position_original_decay,'g')
 print myrobot
 print diff_position
 print diff_position_original
