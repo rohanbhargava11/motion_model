@@ -94,41 +94,20 @@ class robot(object):
                 res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise,self.independent_noise_trans)
                 return res       
     
-    def move(self, turn, forward):
-            if forward < 0:
+    def move_velocity(self, turn_velocity, forward_velocity):
+            time=1.0
+            if forward_velocity < 0:
                 raise ValueError, 'Robot cant move backwards'         
-            
-            mean_dist_t=0.0
-            var_dist_d=self.forward_noise
-            var_dist_t=self.turn_noise
-            mean_turn_d=0.0
-            mean_turn_t=0.0
-            var_turn_t=self.turn_noise
-            var_turn_d=self.forward_noise
-            
-            var_trans_independent=self.independent_noise_trans
-            var_rot_independent=self.turn_noise
-            dist=random.gauss(forward,forward**2*var_dist_d+turn**2*var_dist_t+var_trans_independent)
-            
-            # turn, and add randomness to the turning command
-            turn_dist=random.gauss(turn,forward**2*var_turn_d+turn**2*var_turn_t+var_rot_independent)
-            
-            orientation_real = self.orientation + float(turn_dist) 
-            orientation_real %= 2 * pi
-         
-            orientation_new=self.orientation+float(turn_dist)/2
-            orientation_new %= 2*pi
-            x=self.x+(cos(orientation_new)*dist)
-    
-            y = self.y + (sin(orientation_new) * dist)
-            
+            x= self.x-(forward_velocity/turn_velocity)*sin(self.orientation)+(forward_velocity/turn_velocity)*sin(self.orientation+turn_velocity*time)
+            y= self.y+(forward_velocity/turn_velocity)*cos(self.orientation)-(forward_velocity/turn_velocity)*cos(self.orientation+turn_velocity*time)
+            orientation=self.orientation+turn_velocity*time # they also add a random term but I am not using it
             x %= world_size    # cyclic truncate
             y %= world_size        
             
             
             # set particle
             res = robot()
-            res.set(x, y, orientation_real)
+            res.set(x, y, orientation)
             res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise,self.independent_noise_trans)
             return res   
     
