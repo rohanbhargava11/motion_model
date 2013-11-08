@@ -151,7 +151,26 @@ class robot:
         res.set(x, y, orientation_real)
         res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise)
         return res
-    
+    def move_velocity(self, turn_velocity, forward_velocity):
+        time=1.0
+        if forward_velocity < 0:
+            raise ValueError, 'Robot cant move backwards'   
+        #print self.turn_noise
+        orientation=self.orientation+turn_velocity*time+random.gauss(0.0,self.turn_noise)
+        orientation %= 2 * pi
+        forward_velocity=forward_velocity+random.gauss(0.0,self.forward_noise)
+        x= self.x-(forward_velocity/turn_velocity)*sin(self.orientation)+(forward_velocity/turn_velocity)*sin(self.orientation+turn_velocity*time)
+        y= self.y+(forward_velocity/turn_velocity)*cos(self.orientation)-(forward_velocity/turn_velocity)*cos(self.orientation+turn_velocity*time)
+         # they also add a random term but I am not using it
+        x %= world_size    # cyclic truncate
+        y %= world_size        
+        
+        
+        # set particle
+        res = robot()
+        res.set(x, y, orientation)
+        res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise)
+        return res       
     def Gaussian(self, mu, sigma, x):
         
         # calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
@@ -237,7 +256,7 @@ for i in range(N):
     
         x.set_noise(0.05,0.05,5.0)
         p.append(x)
-        p_original.append(x)
+        #p_original.append(x)
 w_mean=[]
 
 for t in range(20):
@@ -250,10 +269,10 @@ for t in range(20):
 
     world[myrobot.x,myrobot.y]=0
     if t<=5:
-        myrobot = myrobot.move_real(0.0,5.0,0.05,0.05) #turn,forward
+        myrobot = myrobot.move_velocity(0.1,1.0) #turn,forward
     else:
-        print ' I am on a different terrain'
-        myrobot=myrobot.move_real(0.0,5.0,0.2,0.2)
+        #print ' I am on a different terrain'
+        myrobot=myrobot.move_velocity(0.1,1.0)
     #myrobot=myrobot.move_real(0.0,5.0,0.05,0.05)
     
     plot(myrobot.x,myrobot.y,'r^')
@@ -265,8 +284,8 @@ for t in range(20):
     p2 =[]
     p2_original=[]
     for i in range(N):
-        p2.append(p[i].move(0.0,5.0)) # turn,forward
-        p2_original.append(p_original[i].move_real(0.0,5.0,0.05,0.05))
+        p2.append(p[i].move_velocity(0.1,1.0)) # turn,forward
+        #p2_original.append(p_original[i].move_real(0.0,5.0,0.05,0.05))
             
       
     
@@ -280,11 +299,11 @@ for t in range(20):
     # I think there is a missing p=p2 .. need to verify this
     for i in range(N):
         prob_sensor,dist_sensor=p[i].measurement_prob(Z)
-        prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z)
+        #prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z)
         
         #print prob_sensor
         w.append(prob_sensor)
-        w_original.append(prob_sensor_original)
+        #w_original.append(prob_sensor_original)
         
         #dist_w.append(dist_sensor)
     #print 'the difference is',diff_odom
@@ -303,36 +322,36 @@ for t in range(20):
     beta = 0.0
     beta_original=0.0
     mw = max(w)
-    mw_original=max(w_original)
+    #mw_original=max(w_original)
     diff_odom_x=[]
     #diff_odom_x_original=[]
     
     for i in range(int(N)):
         beta += random.random() * 2.0 * mw
-        beta_original +=random.random() * 2.0 * mw_original
+        #beta_original +=random.random() * 2.0 * mw_original
         while beta > w[index]:
             beta -= w[index]
             index = (index +1) % N
-        while beta_original > w_original[index_original]:
-            beta_original -= w_original[index_original]
-            index_original=(index_original+1)%N
+        #while beta_original > w_original[index_original]:
+        #    beta_original -= w_original[index_original]
+        #    index_original=(index_original+1)%N
             
         p3.append(p[index])
-        p3_original.append(p_original[index_original])
-    for i in range(int(N)):
-        diff_odom_x.append(w[i]*(np.sqrt(((p[i].x-p_previous[i].x)**2)+((p[i].y-p_previous[i].y)**2))))
+        #p3_original.append(p_original[index_original])
+    #for i in range(int(N)):
+     #   diff_odom_x.append(w[i]*(np.sqrt(((p[i].x-p_previous[i].x)**2)+((p[i].y-p_previous[i].y)**2))))
         #diff_odom_x_original.append(np.sqrt(((p_original[index].x-p_previous_original[index].x)**2)+((p_original[index].y-p_previous_original[index].y)**2)))
         
     
     
     
-    diff_odom=np.asarray(diff_odom_x)
-    diff_odom=diff_odom-5.0
+    #diff_odom=np.asarray(diff_odom_x)
+    #diff_odom=diff_odom-5.0
     
-    r=gmm.fit(diff_odom)
-    print 'the mean with fit model is',r.means_[0,0],'and the variance is',r.covars_[0,0]
-    myrobot.forward_noise=r.covars_[0,0]#np.var(diff_odom)
-    myrobot.forward_noise_mean=r.means_[0,0]#np.mean(diff_odom)    
+    #r=gmm.fit(diff_odom)
+    #print 'the mean with fit model is',r.means_[0,0],'and the variance is',r.covars_[0,0]
+    #myrobot.forward_noise=r.covars_[0,0]#np.var(diff_odom)
+    #myrobot.forward_noise_mean=r.means_[0,0]#np.mean(diff_odom)    
     #print 'the mean is',np.mean(diff_odom)
     #print 'the variance is',np.var(diff_odom)
     #print 'the difference in the x is',diff_odom_x
@@ -340,23 +359,23 @@ for t in range(20):
     
  
     p=p3
-    p_original=p3_original
+    #p_original=p3_original
     #print p
-    print len(p)
+    #print len(p)
     
     print 'The actual location of the robot',myrobot
     particle_location=get_position(p)
-    particle_location_original=get_position(p_original)
-    diff_position.append(np.sqrt(((myrobot.x-particle_location[0])**2)+((myrobot.y-particle_location[1])**2)))
-    diff_position_original.append(np.sqrt(((myrobot.x-particle_location_original[0])**2)+((myrobot.y-particle_location_original[1])**2)))
+    #particle_location_original=get_position(p_original)
+    #diff_position.append(np.sqrt(((myrobot.x-particle_location[0])**2)+((myrobot.y-particle_location[1])**2)))
+    #diff_position_original.append(np.sqrt(((myrobot.x-particle_location_original[0])**2)+((myrobot.y-particle_location_original[1])**2)))
     print 'The predicted location',particle_location    
-    print 'the original location is',particle_location_original
+    #print 'the original location is',particle_location_original
     #plot(particle_location[0],particle_location[1],'r*')
     #raw_input("Press enter to see the robot move")
 
 print myrobot
-print diff_position
-print diff_position_original
+#print diff_position
+#print diff_position_original
 #clf()
 #plot(diff_position)
 
