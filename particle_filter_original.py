@@ -645,7 +645,7 @@ plot(parameter_inde,'g')
 plot(parameter_turn,'b')
 figure(3)
 plt.xticks(np.arange(0,iterations+1,5.0))
-plt.yticks(min(average_weight),max(average_weight),5.0)
+plt.yticks(np.arange(min(average_weight),max(average_weight),5.0))
 plot(average_weight,'b')
 #plot(diff_position_original_decay,'g')
 #print myrobot
