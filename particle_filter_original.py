@@ -350,7 +350,7 @@ p = []
 p_original=[]
 #p_decay_original=[]
 
-iterations=200
+iterations=10
 world=zeros((world_size,world_size))
 distance_reported=np.zeros((iterations))
 
@@ -638,6 +638,7 @@ p1, =plot(diff_position)
 p2, =plot(diff_position_original,'r')
 #plot(average_weight,'y')
 #plot(average_weight*10000,'y')
+print p1,p2
 plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
 figure(2)
 plot(parameter_forw,'r')
