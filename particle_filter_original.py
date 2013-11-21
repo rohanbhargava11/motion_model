@@ -50,12 +50,12 @@ class robot(object):
         self.sense_noise   = float(new_s_noise);
         self.independent_noise_trans = float(new_t_inde_noise)
     
-    def sense(self,sense_noise):
+    def sense(self):
         Z = []
         #print self.sense_noise
         for i in range(len(landmarks)):
             dist = sqrt((self.x - landmarks[i][0]) ** 2 + (self.y - landmarks[i][1]) ** 2)
-            dist += random.gauss(0.0,sense_noise)
+            dist += random.gauss(0.0,self.sense_noise)
             Z.append(dist)
         return Z
     
@@ -241,18 +241,26 @@ def smooth(p_history,time,weight_filtered,p_filtered):
     index = int(random.random() * N)
     beta = 0.0
     mw = max(weight_filtered)
+    #print 'weights are',weight_filtered
     #print 'the mx is',mw
-    for g in range(1):
-        print g
+    for g in range(3):
+        #print g
         traj.append([])
+        #print 'choosing filtering'
+        beta=0.0
         for k in range(1):
+            #idk=random.random()
+            
+            #print 'mw',mw
+            #print 'idk',(idk*2.0*mw)+beta
+            #print 'beta is',beta
             beta += random.random() * 2.0 * mw
             while beta > weight_filtered[index]:
                 beta -= weight_filtered[index]
                 index = (index +1) % N
                         
             traj[g].append((p_filtered[index].x,p_filtered[index].y,p_filtered[index].orientation))      
-        print 'filteration done'
+        #print 'filteration done'
         #if time==t:
         #    print 'volla'
         for i in range(time-1,-1,-1):
@@ -266,17 +274,17 @@ def smooth(p_history,time,weight_filtered,p_filtered):
         
             index = int(random.random() * N)
             beta = 0.0
-            mw = max(weight)
+            mw_smoothing = max(weight)
             #print 'the mx is',mw
-            print 'smmothed weight calc'
+            #print 'smmothed weight calc'
             for k in range(1):
-                beta += random.random() * 2.0 * mw
+                beta += random.random() * 2.0 * mw_smoothing
                 while beta > weight[index]:
                     beta -= weight[index]
                     index = (index +1) % N
                     
                 traj[g].append((p_history[index][i].x,p_history[index][i].y,p_history[index][i].orientation))    
-            print 'trjectory append'
+            #print 'trjectory append'
     return traj      
 
 
@@ -368,7 +376,7 @@ world[myrobot.x,myrobot.y]=2
 diff_position=[]
 diff_position_original=[]
 #diff_position_original_decay=[]
-sensor_noise=0.5
+sensor_noise=1.0
 for i in range(N):
         x = robot()
         #world[x.x,x.y]=3
@@ -401,21 +409,21 @@ parameter_turn=[]
 parameter_inde=[]
 drift=1.0
 for t in range(iterations):
-    print t
+    #print t
     clf()
     counter=t
     #for i in range(4):
         #hold(1)
         #plot(landmarks[i][0],landmarks[i][1],'bo')
     world[myrobot.x,myrobot.y]=0
-   #if t<change:
-    #   myrobot = myrobot.move_real(rotate,move,0.0,0.05,0.05,0.05,0.05,0.05,0.05) #turn,forward
-    #elif t>=change and t<60:
+    if t<change:
+        myrobot = myrobot.move_real(rotate,move,0.0,0.05,0.05,0.05,0.05,0.05,0.05) #turn,forward
+   #elif t>=change and t<60:
         #myrobot=myrobot.move_real(rotate,move,0.5,0.05,0.05,0.05,0.05,0.05)
         
-   #else:
+    else:
         #print 'I am on a different terrain'
-    myrobot=myrobot.move_real(rotate,move,drift,0.05,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
+        myrobot=myrobot.move_real(rotate,move,drift,0.5,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
     #plot(myrobot.x,myrobot.y,'r^')
     world[myrobot.x,myrobot.y]=2
     #Z_before=myrobot.sense()
@@ -425,7 +433,7 @@ for t in range(iterations):
     #print p #PLEASE LEAVE THIS HERE FOR GRADING PURPOSES
     #if t>change:
     #    myrobot.sense_noise=7.0
-    #Z=myrobot.sense()
+    Z=myrobot.sense()
     p2 =[]
     p2_original=[]
     #p2_decay_original=[]
@@ -437,7 +445,7 @@ for t in range(iterations):
         #print p2_decay_original[i]
     
     
-    print 'movement done'
+    #print 'movement done'
     w=[]
     w_original=[]
     #w_decay_original=[]
@@ -448,14 +456,15 @@ for t in range(iterations):
     #p_decay_original=p2_decay_original
     #print 'hello',p_decay_original
     flag_paramter=0
+    #Z=myrobot.sense()
     for i in range(N):
         if t>60:
-            Z=myrobot.sense(sensor_noise)
-            prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
+            
+            prob_sensor,dist_sensor=p[i].measurement_prob(Z,10.0)
             flag_paramter=0
-            prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)    
+            prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,10.0)    
         else:
-            Z=myrobot.sense(sensor_noise)
+            #Z=myrobot.sense(sensor_noise)
             prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
             prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)
         #print i
@@ -519,9 +528,9 @@ for t in range(iterations):
     #print p
    
     #print 'the history is',p_history[1][t].weight,p_history[1][t].forward_prob
-    print 'smoothing started'
+    #print 'smoothing started'
     trajectory=smooth(p_history,t,w,p)
-    print 'smoothing finished'
+    #print 'smoothing finished'
     #trajectory_decay=smooth(p_decay_history,t,w_decay_original,p_decay_original)
     #print 'trajectory is',trajectory[0][0][0]
     
@@ -532,7 +541,7 @@ for t in range(iterations):
     if len(trajectory[0])>1:
         
         rotation_error,tran_error=error_calculation(trajectory,distance_reported,rotation_reported)
-        print tran_error
+        #print tran_error
         #rotation_error_decay,tran_error_decay=error_calculation(trajectory_decay,distance_reported,rotation_reported)
         #tran_error_decay=tran_error
         #decay fucntion for the tran error#
@@ -583,19 +592,23 @@ for t in range(iterations):
             #inde_turn_decay=res2[0][2]
     
     #print 'The actual location of the robot',myrobot
-    print 'computed the paramters'
+    #print 'computed the paramters'
     parameter_forw.append(forw)
     parameter_turn.append(turn)
     parameter_inde.append(inde)    
     particle_location=get_position(p)
     
     particle_location_original=get_position(p_original)
+    print 'particle estimate',particle_location_original
+    print 'robot',myrobot
     #particle_location_original_decay=get_position(p_decay_original)
     #print 'The predicted location',particle_location
     dist=position_error(myrobot,particle_location)
     diff_position.append(dist)
     dist=position_error(myrobot,particle_location_original)
     diff_position_original.append(dist)
+    print dist
+    #print diff_position_original
     
     #diff_position.append(np.sqrt((min((myrobot.x-particle_location[0])**2,(200-(abs(myrobot.x-particle_location[0])))**2)+(min((myrobot.y-particle_location[1])**2,(200-(abs(myrobot.y-particle_location[1])))**2)))))
     #diff_position_original.append(np.sqrt((min((myrobot.x-particle_location_original[0])**2,(200-(abs(myrobot.x-particle_location_original[0])))**2)+(min((myrobot.y-particle_location_original[1])**2,(200-(abs(myrobot.y-particle_location_original[1])))**2)))))
@@ -608,7 +621,7 @@ for t in range(iterations):
     #print p
     #print "the actual location is"
     
-    print 'looping back again'
+    #print 'looping back again'
     #show()
     #clf()
 #print p
@@ -624,9 +637,9 @@ plot(parameter_forw,'r')
 plot(parameter_inde,'g')
 plot(parameter_turn,'b')
 #plot(diff_position_original_decay,'g')
-print myrobot
-print diff_position
-print diff_position_original
+#print myrobot
+#print diff_position
+#print diff_position_original
 #print p
 show()
 #raw_input("Press enter to see the robot move")
