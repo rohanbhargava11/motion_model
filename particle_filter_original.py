@@ -126,7 +126,7 @@ class robot(object):
                 #inital_y=self.y
                 #inital_theta=self.orientation
                 dist=random.gauss(forward-drift,forward**2*var_dist_d+turn**2*var_dist_t+var_trans_independent)
-                
+                #print forward**2*var_dist_d+turn**2*var_dist_t+var_trans_independent
                 # turn, and add randomness to the turning command
                 turn_dist=random.gauss(turn,forward**2*var_turn_d+turn**2*var_turn_t+var_rot_independent)
                 
@@ -189,6 +189,7 @@ class robot(object):
         #print sense_noise
         for i in range(len(landmarks)):
             dist = sqrt((self.x - landmarks[i][0]) ** 2 + (self.y - landmarks[i][1]) ** 2)
+            #print dist-measurement[i]
             prob *= self.Gaussian(dist,sensor_noise, measurement[i])
             dist_sum+=dist
         return prob,dist_sum
@@ -349,7 +350,7 @@ p = []
 p_original=[]
 #p_decay_original=[]
 
-iterations=100
+iterations=200
 world=zeros((world_size,world_size))
 distance_reported=np.zeros((iterations))
 
@@ -377,6 +378,7 @@ diff_position=[]
 diff_position_original=[]
 #diff_position_original_decay=[]
 sensor_noise=1.0
+average_weight=[]
 for i in range(N):
         x = robot()
         #world[x.x,x.y]=3
@@ -403,7 +405,7 @@ inde_turn=0.05
 #inde_turn_decay=0.05
 move=2.0
 rotate=0.0  #is this in radian or degrees???
-change=20
+change=100
 parameter_forw=[]
 parameter_turn=[]
 parameter_inde=[]
@@ -422,8 +424,8 @@ for t in range(iterations):
         #myrobot=myrobot.move_real(rotate,move,0.5,0.05,0.05,0.05,0.05,0.05)
         
     else:
-        #print 'I am on a different terrain'
-        myrobot=myrobot.move_real(rotate,move,drift,0.5,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
+        print 'I am on a different terrain'
+        myrobot=myrobot.move_real(rotate,move,drift,0.05,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
     #plot(myrobot.x,myrobot.y,'r^')
     world[myrobot.x,myrobot.y]=2
     #Z_before=myrobot.sense()
@@ -455,14 +457,14 @@ for t in range(iterations):
     p_original=p2_original
     #p_decay_original=p2_decay_original
     #print 'hello',p_decay_original
-    flag_paramter=0
+    flag_paramter=1
     #Z=myrobot.sense()
     for i in range(N):
         if t>60:
             
-            prob_sensor,dist_sensor=p[i].measurement_prob(Z,10.0)
-            flag_paramter=0
-            prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,10.0)    
+            prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
+            flag_paramter=1
+            prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)    
         else:
             #Z=myrobot.sense(sensor_noise)
             prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
@@ -509,7 +511,8 @@ for t in range(iterations):
             index_original=(index_original+1)%N
         #while beta_decay_original > w_decay_original[index_decay_original]:
          #           beta_decay_original -= w_decay_original[index_decay_original]
-          #          index_decay_original=(index_decay_original+1)%N        
+          #          index_decay_original=(index_decay_original+1)%N 
+          
         p3.append(p[index])
         p3_original.append(p_original[index_original])
         #p3_decay_original.append(p_decay_original[index_decay_original])
@@ -538,6 +541,8 @@ for t in range(iterations):
     rotation_reported[t]=rotate
     #tran_error_decay=np.zeros((len(trajectory_decay),len(trajectory_decay[0])))
     #print' testing',trajectory
+    average_weight.append(average(w_original))
+    #average_weight[t]=average_weight[t]*100000
     if len(trajectory[0])>1:
         
         rotation_error,tran_error=error_calculation(trajectory,distance_reported,rotation_reported)
@@ -626,16 +631,22 @@ for t in range(iterations):
     #clf()
 #print p
 figure(1)
-plt.xticks(np.arange(0,101,5.0))
+plt.xticks(np.arange(0,iterations+1,5.0))
 plt.xlabel('Timesteps')
 plt.ylabel('Euclidean Error')
 p1, =plot(diff_position)
 p2, =plot(diff_position_original,'r')
+#plot(average_weight,'y')
+#plot(average_weight*10000,'y')
 plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
 figure(2)
 plot(parameter_forw,'r')
 plot(parameter_inde,'g')
 plot(parameter_turn,'b')
+figure(3)
+plt.xticks(np.arange(0,iterations+1,5.0))
+plt.yticks(min(average_weight),max(average_weight),5.0)
+plot(average_weight,'b')
 #plot(diff_position_original_decay,'g')
 #print myrobot
 #print diff_position
