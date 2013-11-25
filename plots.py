@@ -1,7 +1,7 @@
 import numpy as np
 from pylab import *
 
-test=np.load('/home/rohan/Documents/motion_model/datasets/200_0.05_0.5_s_1.0_traj_3_loop_7.npz')
+test=np.load('/home/rohan/Documents/motion_model/datasets/200_0.05_0.05_s_1.0_10_traj_30_drift_2.npz')
 test.files
 plt.xticks(np.arange(0,200,10.0))
 plt.xlabel('Timesteps')
@@ -16,13 +16,14 @@ plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
 figure(2)
 parameter_forw_plot=test['parameter_forw_plot']
 parameter_inde_plot=test['parameter_inde_plot']
-print max(parameter_forw_plot)
+#print parameter_forw_plot.shape
 np.putmask(parameter_forw_plot,parameter_forw_plot>=100,0.05)
-print max(parameter_forw_plot)
+print parameter_forw_plot[199]
+print parameter_inde_plot[199]
 np.putmask(parameter_inde_plot,parameter_inde_plot>=100,0.05)
 plt.xlabel('Timesteps')
 plt.ylabel('Value')
-
+plt.xticks(np.arange(0,201,10.0))
 p3, =plot(parameter_forw_plot,'r')
 p4, =plot(parameter_inde_plot,'g')
 p5, =plot(test['parameter_turn_plot'],'b')
