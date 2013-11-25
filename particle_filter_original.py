@@ -353,7 +353,7 @@ def position_error(robot,particle):
 
 loop=5
 iterations=200
-drift=0.0 
+drift=1.0
 no_trajectory=3
 sensor_noise=1.0
 diff_position=np.zeros((loop,iterations))
@@ -446,7 +446,7 @@ for j in range(loop):
             
         else:
             #$print 'I am on a different terrain'
-            myrobot=myrobot.move_real(rotate,move,drift,0.5,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
+            myrobot=myrobot.move_real(rotate,move,drift,0.05,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
         #plot(myrobot.x,myrobot.y,'r^')
         world[myrobot.x,myrobot.y]=2
         #Z_before=myrobot.sense()
@@ -667,7 +667,7 @@ average_weight_plot=np.average(average_weight,0)
 #np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
 #from tempfile import TemporaryFile
 #2000.050.5s1.0traj_3 = TemporaryFile()
-np.savez('200_0.05_0.5_s_1.0_traj_3_loop_7',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot)
+np.savez('200_0.05_0.05_s_1.0_traj_3_drift_1',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot)
 print 'done'
 #p1, =plot(diff_position_plot)
 #p2, =plot(diff_position_original_plot,'r')

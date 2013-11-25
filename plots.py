@@ -1,7 +1,7 @@
 import numpy as np
 from pylab import *
 
-test=np.load('/home/rohan/Documents/motion_model/datasets/200_0.05_0.05_s_1.0_10_traj_30_drift_2.npz')
+test=np.load('/home/rohan/Documents/motion_model/200_0.05_0.05_s_1.0_traj_3_drift_1.npz')
 test.files
 plt.xticks(np.arange(0,200,10.0))
 plt.xlabel('Timesteps')
