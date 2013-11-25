@@ -244,7 +244,7 @@ def smooth(p_history,time,weight_filtered,p_filtered):
     mw = max(weight_filtered)
     #print 'weights are',weight_filtered
     #print 'the mx is',mw
-    for g in range(3):
+    for g in range(no_trajectory):
         #print g
         traj.append([])
         #print 'choosing filtering'
@@ -266,22 +266,26 @@ def smooth(p_history,time,weight_filtered,p_filtered):
         #    print 'volla'
         for i in range(time-1,-1,-1):
             #print i
-            weight=[]
+            weight_smooth=[]
+            #p_history_smooth=[]
             for j in range(N):
-                p_history[j][i].weight=p_history[j][i].weight*p_history[j][i].forward_prob
+                weight_smooth.append(p_history[j][i].weight*p_history[j][i].forward_prob)
                 #print p_history[j][i].weight
                 #weight.append(p_history[j][i].weight*p_history[j][i].forward_prob)
-                weight.append(p_history[j][i].weight)
+                #weight.append(p_history_smooth)
         
             index = int(random.random() * N)
             beta = 0.0
-            mw_smoothing = max(weight)
+            mw_smoothing = max(weight_smooth)
+            #print 'smoothing',mw_smoothing
             #print 'the mx is',mw
             #print 'smmothed weight calc'
             for k in range(1):
                 beta += random.random() * 2.0 * mw_smoothing
-                while beta > weight[index]:
-                    beta -= weight[index]
+                #print 'mw_smoothing',mw_smoothing
+                #print 'beta',beta
+                while beta > weight_smooth[index]:
+                    beta -= weight_smooth[index]
                     index = (index +1) % N
                     
                 traj[g].append((p_history[index][i].x,p_history[index][i].y,p_history[index][i].orientation))    
@@ -309,6 +313,9 @@ def f(x,*args):
     #for i in range(counter):
         #args = (param[i],3, 7, 8, 9, 10)
     a, b, c = args
+    #print 'para',u,v,z
+    if u<0.0: #or u>20:
+        u=0.05
     return sum(np.log(2*np.pi)+np.log((a[0:counter]**2)*u + (b[0:counter]**2)*v + z)+((c[:,0:counter]**2)/(a[0:counter]**2)*u+(b[0:counter]**2)*v+z))*(-0.5)
     #temp=temp*(-1*0.5)    
     #return temp
@@ -346,9 +353,15 @@ def position_error(robot,particle):
 
 loop=5
 iterations=200
+drift=0.0 
+no_trajectory=3
+sensor_noise=1.0
 diff_position=np.zeros((loop,iterations))
 diff_position_original=np.zeros((loop,iterations))
 average_weight=np.zeros((loop,iterations))
+parameter_forw=np.zeros((loop,iterations))
+parameter_turn=np.zeros((loop,iterations))
+parameter_inde=np.zeros((loop,iterations))
 for j in range(loop):
 
     myrobot = robot()
@@ -385,7 +398,7 @@ for j in range(loop):
     #diff_position=[]
     #diff_position_original=[]
     #diff_position_original_decay=[]
-    sensor_noise=1.0
+    
     
     for i in range(N):
             x = robot()
@@ -411,14 +424,12 @@ for j in range(loop):
     
     inde_turn=0.05
     #inde_turn_decay=0.05
-    move=2.0
+    move=3.0
     rotate=0.0  #is this in radian or degrees???
-    change=100
+    change=60
     
-    drift=1.0    
-    parameter_forw=[]
-    parameter_turn=[]
-    parameter_inde=[] 
+    
+     
     w_mean=[]
     for t in range(iterations):
         #print t
@@ -429,13 +440,13 @@ for j in range(loop):
             #plot(landmarks[i][0],landmarks[i][1],'bo')
         world[myrobot.x,myrobot.y]=0
         if t<change:
-            myrobot = myrobot.move_real(rotate,move,0.0,0.05,0.05,0.05,0.05,0.05,0.05) #turn,forward
+            myrobot = myrobot.move_real(rotate,move,drift,0.05,0.05,0.05,0.05,0.05,0.05) #turn,forward
        #elif t>=change and t<60:
             #myrobot=myrobot.move_real(rotate,move,0.5,0.05,0.05,0.05,0.05,0.05)
             
         else:
-            print 'I am on a different terrain'
-            myrobot=myrobot.move_real(rotate,move,drift,0.05,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
+            #$print 'I am on a different terrain'
+            myrobot=myrobot.move_real(rotate,move,drift,0.5,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
         #plot(myrobot.x,myrobot.y,'r^')
         world[myrobot.x,myrobot.y]=2
         #Z_before=myrobot.sense()
@@ -471,7 +482,7 @@ for j in range(loop):
         #Z=myrobot.sense()
         for i in range(N):
             if t>60:
-                
+                #print 'different sensor noise'
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
                 flag_paramter=0
                 prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)    
@@ -479,7 +490,7 @@ for j in range(loop):
                 #Z=myrobot.sense(sensor_noise)
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
                 prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)
-            #print i
+            #print t
             #print p_decay_original[i]
             #prob_sensor_original_decay,dist_sensor_original_decay=p_decay_original[i].measurement_prob(Z)
             w.append(prob_sensor)
@@ -492,7 +503,7 @@ for j in range(loop):
         #print w
         figure(1)
         #figure(1)
-        #print w
+        print t
         
         
         #resampling step
@@ -608,14 +619,14 @@ for j in range(loop):
         
         #print 'The actual location of the robot',myrobot
         #print 'computed the paramters'
-        parameter_forw.append(forw)
-        parameter_turn.append(turn)
-        parameter_inde.append(inde)    
+        parameter_forw[j][t]=forw
+        parameter_turn[j][t]=turn
+        parameter_inde[j][t]=inde    
         particle_location=get_position(p)
         
         particle_location_original=get_position(p_original)
-        print 'particle estimate',particle_location_original
-        print 'robot',myrobot
+        #print 'particle estimate',particle_location_original
+        #print 'robot',myrobot
         #particle_location_original_decay=get_position(p_decay_original)
         #print 'The predicted location',particle_location
         dist=position_error(myrobot,particle_location)
@@ -641,31 +652,55 @@ for j in range(loop):
         #clf()
 #print p
 figure(1)
-plt.xticks(np.arange(0,iterations+1,5.0))
+text.usetex=True
+plt.xticks(np.arange(0,iterations,10.0))
 plt.xlabel('Timesteps')
 plt.ylabel('Euclidean Error')
-diff_position_plot=np.average(diff_position,1)
-diff_position_original_plot=np.average(diff_position_original,1)
-p1, =plot(diff_position_plot)
-p2, =plot(diff_position_original_plot,'r')
+diff_position_plot=np.average(diff_position,0)
+diff_position_original_plot=np.average(diff_position_original,0)
+
+parameter_forw_plot=np.average(parameter_forw,0)
+parameter_inde_plot=np.average(parameter_inde,0)
+parameter_turn_plot=np.average(parameter_turn,0)
+average_weight_plot=np.average(average_weight,0)
+#np.save(/datasets/diff_position_plot,diff_position_plot)
+#np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
+#from tempfile import TemporaryFile
+#2000.050.5s1.0traj_3 = TemporaryFile()
+np.savez('200_0.05_0.5_s_1.0_traj_3_loop_7',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot)
+print 'done'
+#p1, =plot(diff_position_plot)
+#p2, =plot(diff_position_original_plot,'r')
+
 #plot(average_weight,'y')
 #plot(average_weight*10000,'y')
 #print p1,p2
-plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
-figure(2)
-plot(parameter_forw,'r')
-plot(parameter_inde,'g')
-plot(parameter_turn,'b')
-figure(3)
-#plt.xticks(np.arange(0,iterations+1,5.0))
-#plt.yticks(np.arange(min(average_weight),max(average_weight),5.0))
-#plot(average_weight,'b')
+#plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
+#figure(2)
+#np.putmask(parameter_forw_plot,parameter_forw_plot>=100,0.05)
+#np.putmask(parameter_inde_plot,parameter_inde_plot>=100,0.05)
+#plt.xlabel('Timesteps')
+#plt.ylabel('Value')
+
+#p3, =plot(parameter_forw_plot,'r')
+#p4, =plot(parameter_inde_plot,'g')
+#p5, =plot(parameter_turn_plot,'b')
+#plt.legend([p3,p4,p5],['sigma_d_d','sigma_d_1','sigma_d_t'])
+#figure(3)
+
+
+#plt.xticks(np.arange(0,iterations,10.0))
+#plt.yticks(np.arange(min(average_weight_plot),max(average_weight_plot)))
+#plt.xlabel('Timesteps')
+#plt.ylabel('Value')
+#p6, =plot(average_weight_plot,'b')
+#plt.legend([p6],['weight of particles'])
 #plot(diff_position_original_decay,'g')
 #print myrobot
 #print diff_position
 #print diff_position_original
 #print p
-show()
+#show()
 #raw_input("Press enter to see the robot move")
 
 #print p
