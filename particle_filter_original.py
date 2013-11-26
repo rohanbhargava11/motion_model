@@ -8,7 +8,7 @@
 # Don't modify the code below. Please enter
 # your code at the bottom.
 from numpy import *
-
+import time as time_os
 from pylab import *
 from math import *
 import random
@@ -352,8 +352,9 @@ def position_error(robot,particle):
     return dist
 
 loop=5
+total_time=0
 iterations=200
-drift=1.0
+drift=0.0
 no_trajectory=3
 sensor_noise=1.0
 diff_position=np.zeros((loop,iterations))
@@ -363,7 +364,7 @@ parameter_forw=np.zeros((loop,iterations))
 parameter_turn=np.zeros((loop,iterations))
 parameter_inde=np.zeros((loop,iterations))
 for j in range(loop):
-
+    t1=time_os.time()
     myrobot = robot()
     
     N = 500
@@ -446,7 +447,7 @@ for j in range(loop):
             
         else:
             #$print 'I am on a different terrain'
-            myrobot=myrobot.move_real(rotate,move,drift,0.05,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
+            myrobot=myrobot.move_real(rotate,move,drift,0.5,0.05,0.05,0.05,0.05,0.05) # still have to deal with the move_real theing
         #plot(myrobot.x,myrobot.y,'r^')
         world[myrobot.x,myrobot.y]=2
         #Z_before=myrobot.sense()
@@ -481,7 +482,7 @@ for j in range(loop):
         flag_paramter=0
         #Z=myrobot.sense()
         for i in range(N):
-            if t>60:
+            if t>100:
                 #print 'different sensor noise'
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
                 flag_paramter=0
@@ -503,7 +504,7 @@ for j in range(loop):
         #print w
         figure(1)
         #figure(1)
-        print t
+        #print t
         
         
         #resampling step
@@ -633,7 +634,10 @@ for j in range(loop):
         diff_position[j][t]=dist
         dist=position_error(myrobot,particle_location_original)
         diff_position_original[j][t]=dist
-        print dist
+    t2=time_os.time()
+    total_time+=t2-t1
+        #print t2-t1
+        #print dist
         #print diff_position_original
         
         #diff_position.append(np.sqrt((min((myrobot.x-particle_location[0])**2,(200-(abs(myrobot.x-particle_location[0])))**2)+(min((myrobot.y-particle_location[1])**2,(200-(abs(myrobot.y-particle_location[1])))**2)))))
@@ -653,6 +657,7 @@ for j in range(loop):
 #print p
 figure(1)
 text.usetex=True
+print total_time/loop
 plt.xticks(np.arange(0,iterations,10.0))
 plt.xlabel('Timesteps')
 plt.ylabel('Euclidean Error')
@@ -667,7 +672,7 @@ average_weight_plot=np.average(average_weight,0)
 #np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
 #from tempfile import TemporaryFile
 #2000.050.5s1.0traj_3 = TemporaryFile()
-np.savez('200_0.05_0.05_s_1.0_traj_3_drift_1',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot)
+np.savez('200_0.05_0.5_s_1.0_20_100_traj_3',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot)
 print 'done'
 #p1, =plot(diff_position_plot)
 #p2, =plot(diff_position_original_plot,'r')
