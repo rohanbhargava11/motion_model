@@ -1,8 +1,9 @@
 import numpy as np
 from pylab import *
 
-test=np.load('/home/rohan/Documents/motion_model/200_0.05_0.05_s_1.0_traj_3_drift_1.npz')
+test=np.load('/home/rohan/Documents/motion_model/200_0.05_0.5_s_1.0_traj_15_time.npz')
 test.files
+#print test['diff_position_forward_plot']
 plt.xticks(np.arange(0,200,10.0))
 plt.xlabel('Timesteps')
 plt.ylabel('Euclidean Error')
@@ -10,7 +11,8 @@ plt.ylabel('Euclidean Error')
     
 p1, =plot(test['diff_position_plot'])
 p2, =plot(test['diff_position_original_plot'],'r')
-
+#p3, =plot(test['diff_position_forward_plot'],'y')
+print test['total_time']
 plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
 
 figure(2)

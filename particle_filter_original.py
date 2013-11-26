@@ -350,12 +350,17 @@ def position_error(robot,particle):
     y=min((robot.y-particle[1])%world_size,(particle[1]-robot.y)%world_size)
     dist=np.sqrt((x**2)+(y**2))
     return dist
+def position_error_forward(robot,particle):
+    x=min((robot.x-particle.x)%world_size,(particle.x-robot.x)%world_size)
+    y=min((robot.y-particle.y)%world_size,(particle.y-robot.y)%world_size)
+    dist=np.sqrt((x**2)+(y**2))
+    return dist
 
-loop=5
+loop=3
 total_time=0
 iterations=200
 drift=0.0
-no_trajectory=3
+no_trajectory=30
 sensor_noise=1.0
 diff_position=np.zeros((loop,iterations))
 diff_position_original=np.zeros((loop,iterations))
@@ -363,10 +368,11 @@ average_weight=np.zeros((loop,iterations))
 parameter_forw=np.zeros((loop,iterations))
 parameter_turn=np.zeros((loop,iterations))
 parameter_inde=np.zeros((loop,iterations))
+diff_position_forward=np.zeros((loop,iterations))
 for j in range(loop):
     t1=time_os.time()
     myrobot = robot()
-    
+    myrobot_ghost=robot()
     N = 500
     p = []
     p_original=[]
@@ -486,7 +492,9 @@ for j in range(loop):
                 #print 'different sensor noise'
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
                 flag_paramter=0
-                prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)    
+                prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)
+                
+                
             else:
                 #Z=myrobot.sense(sensor_noise)
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
@@ -502,6 +510,11 @@ for j in range(loop):
             #p_decay_original[i].weight=prob_sensor_original_decay
             #dist_w.append(dist_sensor)
         #print w
+        #if t>100:
+            #print myrobot_ghost,myrobot
+         #   myrobot_ghost=myrobot_ghost.move_real(rotate,move,0.0,0.5,0.05,0.05,0.05,0.05,0.05)
+          #  diff_position_forward[j][t]=position_error_forward(myrobot,myrobot_ghost)            
+            
         figure(1)
         #figure(1)
         #print t
@@ -626,6 +639,12 @@ for j in range(loop):
         particle_location=get_position(p)
         
         particle_location_original=get_position(p_original)
+        #if t==100:
+        #    location=particle_location
+        #    myrobot_ghost.x=location[0]
+         #   myrobot_ghost.y=location[1]
+         #   myrobot_ghost.orientation=location[2]            
+            
         #print 'particle estimate',particle_location_original
         #print 'robot',myrobot
         #particle_location_original_decay=get_position(p_decay_original)
@@ -657,13 +676,14 @@ for j in range(loop):
 #print p
 figure(1)
 text.usetex=True
-print total_time/loop
+total_time=total_time/loop
+print total_time
 plt.xticks(np.arange(0,iterations,10.0))
 plt.xlabel('Timesteps')
 plt.ylabel('Euclidean Error')
 diff_position_plot=np.average(diff_position,0)
 diff_position_original_plot=np.average(diff_position_original,0)
-
+diff_position_forward_plot=np.average(diff_position_forward,0)
 parameter_forw_plot=np.average(parameter_forw,0)
 parameter_inde_plot=np.average(parameter_inde,0)
 parameter_turn_plot=np.average(parameter_turn,0)
@@ -672,7 +692,7 @@ average_weight_plot=np.average(average_weight,0)
 #np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
 #from tempfile import TemporaryFile
 #2000.050.5s1.0traj_3 = TemporaryFile()
-np.savez('200_0.05_0.5_s_1.0_20_100_traj_3',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot)
+np.savez('200_0.05_0.5_s_1.0_traj_30_time',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,average_weight_plot=average_weight_plot,total_time=total_time)
 print 'done'
 #p1, =plot(diff_position_plot)
 #p2, =plot(diff_position_original_plot,'r')
