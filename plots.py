@@ -1,7 +1,7 @@
 import numpy as np
 from pylab import *
 
-test=np.load('/home/rohan/Documents/motion_model/200_0.05_0.5_s_1.0_20.0_100_traj_3_learning.npz')
+test=np.load('/home/rohan/Documents/motion_model/200_0.05_0.5_s_1.0_20.0_100_traj_3_learning_above_average.npz')
 test.files
 #print test['diff_position_forward_plot']
 plt.xticks(np.arange(0,200,10.0))
@@ -50,6 +50,17 @@ plt.yticks(np.arange(min(test['average_weight_plot']),max(test['average_weight_p
 plt.xlabel('Timesteps')
 plt.ylabel('Value')
 p6, =plot(test['average_weight_plot'],'b')
+plot(test['average_weight_original_plot'])
 plt.legend([p6],['weight of particles'])
+figure(5)
+plot(test['above_average_original_plot'],'r')
+plot(test['above_average_plot'],'b')
+figure(6)
+k=test['above_average_original_plot']
+p=k[101:]
+o=test['above_average_plot']
+b=o[101:]
+plot(b,'b')
+plot(p,'r')
 show()
 #plot(testdiff_position_original_decay,'g')

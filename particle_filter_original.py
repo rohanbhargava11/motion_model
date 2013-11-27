@@ -365,6 +365,7 @@ sensor_noise=1.0
 diff_position=np.zeros((loop,iterations))
 diff_position_original=np.zeros((loop,iterations))
 average_weight=np.zeros((loop,iterations))
+average_weight_original=np.zeros((loop,iterations))
 parameter_forw=np.zeros((loop,iterations))
 parameter_forw_turn=np.zeros((loop,iterations))
 parameter_turn=np.zeros((loop,iterations))
@@ -372,6 +373,8 @@ parameter_turn_turn=np.zeros((loop,iterations))
 parameter_inde=np.zeros((loop,iterations))
 parameter_inde_turn=np.zeros((loop,iterations))
 diff_position_forward=np.zeros((loop,iterations))
+above_average_original=np.zeros((loop,iterations))
+above_average=np.zeros((loop,iterations))
 for j in range(loop):
     t1=time_os.time()
     myrobot = robot()
@@ -494,7 +497,7 @@ for j in range(loop):
             if t>100:
                 #print 'different sensor noise'
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,20.0)
-                flag_paramter=0
+                flag_paramter=1
                 prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,20.0)
                 
                 
@@ -579,7 +582,17 @@ for j in range(loop):
         rotation_reported[t]=rotate
         #tran_error_decay=np.zeros((len(trajectory_decay),len(trajectory_decay[0])))
         #print' testing',trajectory
-        average_weight[j][t]=average(w_original)
+        #m=max(w_original)
+        #print average(w_original)
+        #k=[i for i, j in enumerate(w_original) if j>average(w_original)]
+        #o=[i for i, j in enumerate(w) if j>average(w)]
+        #print 'maximum is',m
+       
+        above_average_original[j][t]=max(w_original)-average(w_original)
+        above_average[j][t]=max(w)-average(w)
+        average_weight_original[j][t]=average(w_original)
+        
+        average_weight[j][t]=average(w)
         #average_weight[t]=average_weight[t]*100000
         if len(trajectory[0])>1:
             
@@ -684,9 +697,11 @@ figure(1)
 text.usetex=True
 total_time=total_time/loop
 print total_time
-plt.xticks(np.arange(0,iterations,10.0))
-plt.xlabel('Timesteps')
-plt.ylabel('Euclidean Error')
+above_average_original_plot=np.average(above_average_original,0)
+above_average_plot=np.average(above_average,0)
+#plt.xticks(np.arange(0,iterations,10.0))
+#plt.xlabel('Timesteps')
+#plt.ylabel('Euclidean Error')
 diff_position_plot=np.average(diff_position,0)
 diff_position_original_plot=np.average(diff_position_original,0)
 diff_position_forward_plot=np.average(diff_position_forward,0)
@@ -697,11 +712,13 @@ parameter_inde_turn_plot=np.average(parameter_inde_turn,0)
 parameter_turn_plot=np.average(parameter_turn,0)
 parameter_turn_turn_plot=np.average(parameter_turn_turn,0)
 average_weight_plot=np.average(average_weight,0)
+average_weight_original_plot=np.average(average_weight_original,0)
+
 #np.save(/datasets/diff_position_plot,diff_position_plot)
 #np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
 #from tempfile import TemporaryFile
 #2000.050.5s1.0traj_3 = TemporaryFile()
-np.savez('200_0.05_0.5_s_1.0_20.0_100_traj_3_learning',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,parameter_forw_turn_plot=parameter_forw_turn_plot,parameter_turn_turn_plot=parameter_turn_turn_plot,parameter_inde_turn_plot=parameter_inde_turn_plot,average_weight_plot=average_weight_plot,total_time=total_time)
+np.savez('200_0.05_0.5_s_1.0_20.0_100_traj_3_above_average',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,parameter_forw_turn_plot=parameter_forw_turn_plot,parameter_turn_turn_plot=parameter_turn_turn_plot,parameter_inde_turn_plot=parameter_inde_turn_plot,average_weight_plot=average_weight_plot,average_weight_original_plot=average_weight_original_plot,total_time=total_time,above_average_original_plot=above_average_original_plot,above_average_plot=above_average_plot)
 print 'done'
 #p1, =plot(diff_position_plot)
 #p2, =plot(diff_position_original_plot,'r')
