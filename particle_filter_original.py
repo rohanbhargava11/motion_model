@@ -105,8 +105,8 @@ class robot(object):
                     # set particle
                     res = robot()
                     res.set(x, y, orientation_real)
-                    self.forward_prob=self.Gaussian(distance_motion,forward_noise,forward)
-                    #print res.forward_prob
+                    res.forward_prob=self.Gaussian(distance_motion,forward_noise,forward)
+                    #print self.forward_prob
                     res.set_noise(self.forward_noise, self.turn_noise, self.sense_noise,self.independent_noise_trans)
                     return res          
     def move_real(self, turn, forward,drift,forward_noise,turn_noise,independent_noise_trans,forward_noise_turn,turn_noise_turn,independent_noise_turn):
@@ -264,12 +264,17 @@ def smooth(p_history,time,weight_filtered,p_filtered):
         #print 'filteration done'
         #if time==t:
         #    print 'volla'
-        for i in range(time-1,-1,-1):
+        #print end
+        for i in range(time-1,end,-1):
             #print i
             weight_smooth=[]
             #p_history_smooth=[]
             for j in range(N):
-                weight_smooth.append(p_history[j][i].weight*p_history[j][i].forward_prob)
+                if i>101:
+                    multiplier=1
+                else:
+                    multiplier=1
+                weight_smooth.append(p_history[j][i].weight*(multiplier*p_history[j][i].forward_prob))
                 #print p_history[j][i].weight
                 #weight.append(p_history[j][i].weight*p_history[j][i].forward_prob)
                 #weight.append(p_history_smooth)
@@ -314,9 +319,11 @@ def f(x,*args):
         #args = (param[i],3, 7, 8, 9, 10)
     a, b, c = args
     #print 'para',u,v,z
+    #print a.shape
+    
     if u<0.0: #or u>20:
         u=0.05
-    return sum(np.log(2*np.pi)+np.log((a[0:counter]**2)*u + (b[0:counter]**2)*v + z)+((c[:,0:counter]**2)/(a[0:counter]**2)*u+(b[0:counter]**2)*v+z))*(-0.5)
+    return sum(np.log(2*np.pi)+np.log((a[start:counter]**2)*u + (b[start:counter]**2)*v + z)+((c[:,start:counter]**2)/(a[start:counter]**2)*u+(b[start:counter]**2)*v+z))*(-0.5)
     #temp=temp*(-1*0.5)    
     #return temp
 
@@ -332,9 +339,9 @@ def gradf(x,*args):
         #args = (param[i],3, 7, 8, 9, 10)
     a, b, c = args
     #print 'the args are',a[i],b[i],c[i]
-    gu = sum(((a[0:counter]**2)/((a[0:counter]**2)*u+(b[0:counter]**2)*v+z))-((c[:,0:counter]**2)*(a[0:counter]**2)/(((a[0:counter]**2)*u+(b[0:counter]**2)*v+z)**2)))*(-0.5)    # u-component of the gradient
-    gv = sum(((b[0:counter]**2)/((a[0:counter]**2)*u+(b[0:counter]**2)*v+z))-((c[:,0:counter]**2)*(b[0:counter]**2)/(((a[0:counter]**2)*u+(b[0:counter]**2)*v+z)**2)))*(-0.5)   # v-component of the gradient
-    gz = sum((1/((a[0:counter]**2)*u+(b[0:counter]**2)*v+z))-((c[:,0:counter]**2)/(((a[0:counter]**2)*u+(b[0:counter]**2)*v+z)**2)))*(-0.5)    
+    gu = sum(((a[start:counter]**2)/((a[start:counter]**2)*u+(b[start:counter]**2)*v+z))-((c[:,start:counter]**2)*(a[start:counter]**2)/(((a[start:counter]**2)*u+(b[start:counter]**2)*v+z)**2)))*(-0.5)    # u-component of the gradient
+    gv = sum(((b[start:counter]**2)/((a[start:counter]**2)*u+(b[start:counter]**2)*v+z))-((c[:,start:counter]**2)*(b[start:counter]**2)/(((a[start:counter]**2)*u+(b[start:counter]**2)*v+z)**2)))*(-0.5)   # v-component of the gradient
+    gz = sum((1/((a[start:counter]**2)*u+(b[start:counter]**2)*v+z))-((c[:,start:counter]**2)/(((a[start:counter]**2)*u+(b[start:counter]**2)*v+z)**2)))*(-0.5)    
     #tmp_gu+=gu
     #tmp_gv+=gv
     #tmp_gz+=gz
@@ -375,6 +382,9 @@ parameter_inde_turn=np.zeros((loop,iterations))
 diff_position_forward=np.zeros((loop,iterations))
 above_average_original=np.zeros((loop,iterations))
 above_average=np.zeros((loop,iterations))
+weight_smooth_history_average=np.zeros((loop,iterations))
+end=-1
+
 for j in range(loop):
     t1=time_os.time()
     myrobot = robot()
@@ -389,6 +399,7 @@ for j in range(loop):
     distance_reported=np.zeros((iterations))
     
     rotation_reported=np.zeros((iterations))
+    weight_smooth_history=np.zeros((N,iterations))
     
     for i in range(4):
         world[landmarks[i][0],landmarks[i][1]]=1
@@ -493,17 +504,24 @@ for j in range(loop):
         #print 'hello',p_decay_original
         flag_paramter=0
         #Z=myrobot.sense()
+        print t
         for i in range(N):
             if t>100:
                 #print 'different sensor noise'
-                prob_sensor,dist_sensor=p[i].measurement_prob(Z,20.0)
-                flag_paramter=1
-                prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,20.0)
+                prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
+                flag_paramter=0
+                end=-1
+                start=0
+                multiplier=10
+                prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)
                 
                 
             else:
                 #Z=myrobot.sense(sensor_noise)
                 prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
+                end=-1
+                start=0
+                multiplier=1
                 prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)
             #print t
             #print p_decay_original[i]
@@ -574,6 +592,7 @@ for j in range(loop):
         #print 'the history is',p_history[1][t].weight,p_history[1][t].forward_prob
         #print 'smoothing started'
         trajectory=smooth(p_history,t,w,p)
+        #print len(trajectory[0])
         #print 'smoothing finished'
         #trajectory_decay=smooth(p_decay_history,t,w_decay_original,p_decay_original)
         #print 'trajectory is',trajectory[0][0][0]
@@ -593,10 +612,12 @@ for j in range(loop):
         average_weight_original[j][t]=average(w_original)
         
         average_weight[j][t]=average(w)
+        
         #average_weight[t]=average_weight[t]*100000
         if len(trajectory[0])>1:
             
             rotation_error,tran_error=error_calculation(trajectory,distance_reported,rotation_reported)
+            #print tran_error
             #print tran_error
             #rotation_error_decay,tran_error_decay=error_calculation(trajectory_decay,distance_reported,rotation_reported)
             #tran_error_decay=tran_error
@@ -621,6 +642,7 @@ for j in range(loop):
             #print 'tran error decay is',tran_error_decay
             #print 'the rotation error is',rotation_error
             #print 'just checking',tran_error[0:counter] #when we did this the tran error were huge -> so check that code
+            
             args1 = (distance_reported,rotation_reported,rotation_error)
             x0=np.asarray((0.05,0.05,0.05))
             x1=np.asarray((0.05,0.05,0.05))
@@ -674,6 +696,12 @@ for j in range(loop):
         diff_position_original[j][t]=dist
     t2=time_os.time()
     total_time+=t2-t1
+    for itera in range(iterations):
+        for par in range(N):
+            weight_smooth_history[par][itera]=p_history[par][itera].weight*p_history[par][itera].forward_prob
+        weight_smooth_history_average[j][itera]=max(weight_smooth_history[:,itera])-np.average(weight_smooth_history[:,itera])
+    
+    #weight_smooth_history_average[j]=np.average(weight_smooth_history,1)
         #print t2-t1
         #print dist
         #print diff_position_original
@@ -699,6 +727,7 @@ total_time=total_time/loop
 print total_time
 above_average_original_plot=np.average(above_average_original,0)
 above_average_plot=np.average(above_average,0)
+weight_smooth_history_average_plot=np.average(weight_smooth_history_average,0)
 #plt.xticks(np.arange(0,iterations,10.0))
 #plt.xlabel('Timesteps')
 #plt.ylabel('Euclidean Error')
@@ -718,7 +747,7 @@ average_weight_original_plot=np.average(average_weight_original,0)
 #np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
 #from tempfile import TemporaryFile
 #2000.050.5s1.0traj_3 = TemporaryFile()
-np.savez('200_0.05_0.5_s_1.0_20.0_100_traj_3_above_average',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,parameter_forw_turn_plot=parameter_forw_turn_plot,parameter_turn_turn_plot=parameter_turn_turn_plot,parameter_inde_turn_plot=parameter_inde_turn_plot,average_weight_plot=average_weight_plot,average_weight_original_plot=average_weight_original_plot,total_time=total_time,above_average_original_plot=above_average_original_plot,above_average_plot=above_average_plot)
+np.savez('test',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,parameter_forw_turn_plot=parameter_forw_turn_plot,parameter_turn_turn_plot=parameter_turn_turn_plot,parameter_inde_turn_plot=parameter_inde_turn_plot,average_weight_plot=average_weight_plot,average_weight_original_plot=average_weight_original_plot,total_time=total_time,above_average_original_plot=above_average_original_plot,above_average_plot=above_average_plot,weight_smooth_history_average_plot=weight_smooth_history_average_plot)
 print 'done'
 #p1, =plot(diff_position_plot)
 #p2, =plot(diff_position_original_plot,'r')
