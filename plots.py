@@ -1,7 +1,7 @@
 import numpy as np
 from pylab import *
 
-test=np.load('/home/rohan/Documents/motion_model/test.npz')
+test=np.load('/home/rohan/Documents/motion_model/final_datasets/200_0.05_0.5_s_2.0_traj_20.npz')
 test.files
 #print test['diff_position_forward_plot']
 plt.xticks(np.arange(0,200,10.0))
@@ -37,8 +37,13 @@ figure(3)
 plt.xlabel('Timesteps')
 plt.ylabel('Value')
 plt.xticks(np.arange(0,201,10.0))
-p7, =plot(test['parameter_forw_turn_plot'],'r')
-p8, =plot(test['parameter_inde_turn_plot'],'g')
+parameter_forw_turn_plot=test['parameter_forw_turn_plot']
+np.putmask(parameter_forw_turn_plot,parameter_forw_turn_plot>=100,0.05)
+parameter_turn_turn_plot=test['parameter_turn_turn_plot']
+parameter_inde_turn_plot=test['parameter_inde_turn_plot']
+np.putmask(parameter_inde_turn_plot,parameter_inde_turn_plot>=100,0.05)
+p7, =plot(parameter_forw_turn_plot,'r')
+p8, =plot(parameter_inde_turn_plot,'g')
 p9, =plot(test['parameter_turn_turn_plot'],'b')
 plt.legend([p7,p8,p9],['sigma_t_d','sigma_t_1','sigma_t_t'])
 
