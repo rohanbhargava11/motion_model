@@ -1,7 +1,7 @@
 import numpy as np
 from pylab import *
 
-test=np.load('/home/rohan/Documents/motion_model/final_datasets/200_0.05_0.5_s_2.0_traj_20.npz')
+test=np.load('/home/rohan/Documents/motion_model/final_datasets/200_0.05_0.05_s_1.0_traj_3_drift_2.0_random.npz')
 test.files
 #print test['diff_position_forward_plot']
 plt.xticks(np.arange(0,200,10.0))
