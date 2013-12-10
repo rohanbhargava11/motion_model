@@ -404,7 +404,7 @@ world[myrobot.x,myrobot.y]=2
 diff_position=[]
 diff_position_original=[]
 diff_position_original_decay=[]
-sensor_noise=5.0
+sensor_noise=1.0
 for i in range(N):
         x = robot()
         #world[x.x,x.y]=3
