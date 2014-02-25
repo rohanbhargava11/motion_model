@@ -369,6 +369,7 @@ iterations=200
 drift=0.0
 no_trajectory=3
 sensor_noise=1.0
+
 diff_position=np.zeros((loop,iterations))
 diff_position_original=np.zeros((loop,iterations))
 average_weight=np.zeros((loop,iterations))
@@ -383,6 +384,8 @@ diff_position_forward=np.zeros((loop,iterations))
 above_average_original=np.zeros((loop,iterations))
 above_average=np.zeros((loop,iterations))
 weight_smooth_history_average=np.zeros((loop,iterations))
+count=np.zeros((loop,iterations))
+count_original=np.zeros((loop,iterations))
 end=-1
 
 for j in range(loop):
@@ -508,12 +511,12 @@ for j in range(loop):
         for i in range(N):
             if t>100:
                 #print 'different sensor noise'
-                prob_sensor,dist_sensor=p[i].measurement_prob(Z,10.0)
+                prob_sensor,dist_sensor=p[i].measurement_prob(Z,sensor_noise)
                 flag_paramter=0
                 end=-1
                 start=0
                 multiplier=10
-                prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,10.0)
+                prob_sensor_original,dist_sensor_original=p_original[i].measurement_prob(Z,sensor_noise)
                 
                 
             else:
@@ -531,6 +534,7 @@ for j in range(loop):
             w_original.append(prob_sensor_original)
             #w_decay_original.append(prob_sensor_original_decay)
             p[i].weight=prob_sensor
+            p_original[i].weight=prob_sensor_original
             #p_decay_original[i].weight=prob_sensor_original_decay
             #dist_w.append(dist_sensor)
         #print w
@@ -606,9 +610,18 @@ for j in range(loop):
         #k=[i for i, j in enumerate(w_original) if j>average(w_original)]
         #o=[i for i, j in enumerate(w) if j>average(w)]
         #print 'maximum is',m
-       
-        above_average_original[j][t]=max(w_original)-average(w_original)
-        above_average[j][t]=max(w)-average(w)
+        temp_original=max(w_original)-average(w_original)
+        #count_original=0
+        for i in range(int(N)):
+            if p_original[i].weight>temp_original:
+                count_original[j][t]=count_original[j][t]+1
+        above_average_original[j][t]=temp_original
+        temp=max(w)-average(w)
+        #count=0
+        for i in range(int(N)):
+                    if p[i].weight>temp:
+                        count[j][t]=count[j][t]+1        
+        above_average[j][t]=temp
         average_weight_original[j][t]=average(w_original)
         
         average_weight[j][t]=average(w)
@@ -743,12 +756,13 @@ parameter_turn_plot=np.average(parameter_turn,0)
 parameter_turn_turn_plot=np.average(parameter_turn_turn,0)
 average_weight_plot=np.average(average_weight,0)
 average_weight_original_plot=np.average(average_weight_original,0)
-
+count_original_average_plot=np.average(count_original,0)
+count_average_plot=np.average(count,0)
 #np.save(/datasets/diff_position_plot,diff_position_plot)
 #np.save(/datasets/diff_position_original_plot,diff_position_original_plot)
 #from tempfile import TemporaryFile
 #2000.050.5s1.0traj_3 = TemporaryFile()
-np.savez('200_0.05_0.5_s_1.0_10.0_100_traj_3_trial_1',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,parameter_forw_turn_plot=parameter_forw_turn_plot,parameter_turn_turn_plot=parameter_turn_turn_plot,parameter_inde_turn_plot=parameter_inde_turn_plot,average_weight_plot=average_weight_plot,average_weight_original_plot=average_weight_original_plot,total_time=total_time,above_average_original_plot=above_average_original_plot,above_average_plot=above_average_plot,weight_smooth_history_average_plot=weight_smooth_history_average_plot)
+np.savez('200_0.05_0.5_s_1.0_count',diff_position_plot=diff_position_plot,diff_position_original_plot=diff_position_original_plot,parameter_forw_plot=parameter_forw_plot,parameter_inde_plot=parameter_inde_plot,parameter_turn_plot=parameter_turn_plot,parameter_forw_turn_plot=parameter_forw_turn_plot,parameter_turn_turn_plot=parameter_turn_turn_plot,parameter_inde_turn_plot=parameter_inde_turn_plot,average_weight_plot=average_weight_plot,average_weight_original_plot=average_weight_original_plot,total_time=total_time,above_average_original_plot=above_average_original_plot,above_average_plot=above_average_plot,weight_smooth_history_average_plot=weight_smooth_history_average_plot,count_original_average_plot=count_original_average_plot,count_average_plot=count_average_plot)
 print 'done'
 #p1, =plot(diff_position_plot)
 #p2, =plot(diff_position_original_plot,'r')

@@ -16,7 +16,7 @@ import sklearn.mixture
 
 gmm=sklearn.mixture.GMM()
 landmarks  = [[20.0, 20.0], [80.0, 80.0], [20.0, 80.0], [80.0, 20.0]]
-world_size = 100.0
+world_size = 400.0
 
 
 class robot:

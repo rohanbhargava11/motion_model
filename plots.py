@@ -1,9 +1,9 @@
 import numpy as np
 from pylab import *
-dataset='200_0.05_0.5_s_1.0_10.0_100_traj_3_trial_1'
-
+dataset='200_0.05_0.5_s_1.0_count'
+path='/home/rohan/Documents/python/motion_model/final_datasets/test/plots/'
 print dataset
-test=np.load('/home/rohan/Documents/motion_model/final_datasets/'+dataset+'.npz')
+test=np.load('/home/rohan/Documents/python/motion_model/final_datasets/test/'+dataset+'.npz')
 test.files
 dataset=dataset.replace('.',"")
 #print test['diff_position_forward_plot']
@@ -18,7 +18,7 @@ p2, =plot(test['diff_position_original_plot'],'r')
 #p3, =plot(test['diff_position_forward_plot'],'y')
 print test['total_time']
 plt.legend([p2,p1],["Static Motion Model","Adaptive Motion Model"])
-plt.savefig('/home/rohan/Documents/thesis_work/thesis/thesis_writeup/plots/'+dataset+'.pdf')
+plt.savefig(path+dataset+'.pdf')
 
 figure(2)
 parameter_forw_plot=test['parameter_forw_plot']
@@ -37,7 +37,7 @@ p3, =plot(parameter_forw_plot,'r')
 p4, =plot(parameter_inde_plot,'g')
 p5, =plot(test['parameter_turn_plot'],'b')
 plt.legend([p3,p4,p5],['sigma_d_d','sigma_d_1','sigma_d_t'])
-plt.savefig('/home/rohan/Documents/thesis_work/thesis/thesis_writeup/plots/'+dataset+'_motion_model_trans.pdf')
+plt.savefig(path+dataset+'_motion_model_trans.pdf')
 figure(3)
 plt.xlabel('Timesteps')
 plt.ylabel('Value')
@@ -54,7 +54,7 @@ p7, =plot(parameter_forw_turn_plot,'r')
 p8, =plot(parameter_inde_turn_plot,'g')
 p9, =plot(test['parameter_turn_turn_plot'],'b')
 plt.legend([p7,p8,p9],['sigma_t_d','sigma_t_1','sigma_t_t'])
-plt.savefig('/home/rohan/Documents/thesis_work/thesis/thesis_writeup/plots/'+dataset+'_motion_model_rotation.pdf')
+plt.savefig(path+dataset+'_motion_model_rotation.pdf')
 
 figure(4)
 
@@ -66,11 +66,16 @@ plt.ylabel('Value')
 #p6, =plot(test['average_weight_plot'],'b')
 p7, =plot(test['average_weight_original_plot'],'r')
 plt.legend([p7],['weight of particles'])
-plt.savefig('/home/rohan/Documents/thesis_work/thesis/thesis_writeup/plots/'+dataset+'_average_weight.pdf')
+plt.savefig(path+dataset+'_average_weight.pdf')
 figure(5)
 plot(test['above_average_original_plot'],'r')
 plot(test['above_average_plot'],'b')
-plt.savefig('/home/rohan/Documents/thesis_work/thesis/thesis_writeup/plots/'+dataset+'_max_weight.pdf')
+plt.savefig(path+dataset+'_max_weight.pdf')
+figure(8)
+p15, =plot(test['count_original_average_plot'],'r')
+p16, =plot(test['count_average_plot'],'b')
+plt.legend([p15,p16],['count SM','count AM'])
+plt.savefig(path+dataset+'_count.pdf')
 figure(6)
 #k=test['above_average_original_plot']
 k=test['weight_smooth_history_average_plot']
@@ -81,5 +86,6 @@ plot(b,'b')
 plot(p,'r')
 figure(7)
 plot(test['weight_smooth_history_average_plot'])
-show()
+
+#show()
 #plot(testdiff_position_original_decay,'g')
